@@ -1,7 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.models.jpa;
 
-import dev.sultanov.keycloak.multitenancy.models.Tenant;
-import dev.sultanov.keycloak.multitenancy.models.TenantInvitation;
+import dev.sultanov.keycloak.multitenancy.models.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.models.TenantModel;
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantInvitationEntity;
 import java.util.Set;
 import javax.persistence.EntityManager;
@@ -10,7 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 
-public class TenantInvitationAdapter implements TenantInvitation, JpaModel<TenantInvitationEntity> {
+public class TenantInvitationAdapter implements TenantInvitationModel, JpaModel<TenantInvitationEntity> {
 
     private final KeycloakSession session;
     private final TenantInvitationEntity invitation;
@@ -31,8 +31,8 @@ public class TenantInvitationAdapter implements TenantInvitation, JpaModel<Tenan
     }
 
     @Override
-    public Tenant getTenant() {
-        return session.getProvider(TenantProvider.class).getById(realm, invitation.getTenant().getId()).orElseThrow();
+    public TenantModel getTenant() {
+        return session.getProvider(JpaTenantProvider.class).getTenantById(realm, invitation.getTenant().getId()).orElseThrow();
     }
 
     @Override

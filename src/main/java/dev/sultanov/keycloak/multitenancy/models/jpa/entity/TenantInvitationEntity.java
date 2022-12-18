@@ -10,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -17,6 +18,8 @@ import javax.validation.constraints.Email;
 
 @Entity
 @Table(name = "TENANT_INVITATION", uniqueConstraints = {@UniqueConstraint(columnNames = {"TENANT_ID", "EMAIL"})})
+@NamedQuery(name = "getInvitationsByRealmAndEmail",
+        query = "SELECT i FROM TenantInvitationEntity i WHERE i.tenant in (SELECT o FROM TenantEntity o WHERE o.realmId = :realmId) AND lower(i.email) = lower(:search)")
 public class TenantInvitationEntity {
 
     @Id

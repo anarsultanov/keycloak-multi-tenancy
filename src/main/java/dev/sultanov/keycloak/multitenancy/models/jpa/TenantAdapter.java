@@ -1,7 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.models.jpa;
 
-import dev.sultanov.keycloak.multitenancy.models.Tenant;
-import dev.sultanov.keycloak.multitenancy.models.TenantInvitation;
+import dev.sultanov.keycloak.multitenancy.models.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.models.TenantModel;
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantMembershipEntity;
@@ -15,7 +15,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class TenantAdapter implements Tenant, JpaModel<TenantEntity> {
+public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
 
     private final KeycloakSession session;
     private final TenantEntity tenant;
@@ -102,7 +102,7 @@ public class TenantAdapter implements Tenant, JpaModel<TenantEntity> {
     }
 
     @Override
-    public Stream<TenantInvitation> getInvitations() {
+    public Stream<TenantInvitationModel> getInvitations() {
         return tenant.getInvitations().stream().map(i -> new TenantInvitationAdapter(session, realm, em, i));
     }
 
@@ -117,7 +117,7 @@ public class TenantAdapter implements Tenant, JpaModel<TenantEntity> {
     }
 
     @Override
-    public TenantInvitation addInvitation(String email, UserModel inviter) {
+    public TenantInvitationModel addInvitation(String email, UserModel inviter) {
         TenantInvitationEntity entity = new TenantInvitationEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTenant(tenant);

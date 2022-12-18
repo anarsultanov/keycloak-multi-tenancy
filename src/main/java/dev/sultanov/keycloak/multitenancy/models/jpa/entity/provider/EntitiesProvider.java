@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa;
+package dev.sultanov.keycloak.multitenancy.models.jpa.entity.provider;
 
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantInvitationEntity;
@@ -6,7 +6,7 @@ import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantMembershipEnti
 import java.util.List;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 
-public class MultiTenancyEntitiesProvider implements JpaEntityProvider {
+public class EntitiesProvider implements JpaEntityProvider {
 
     @Override
     public List<Class<?>> getEntities() {
@@ -24,7 +24,7 @@ public class MultiTenancyEntitiesProvider implements JpaEntityProvider {
 
     @Override
     public String getFactoryId() {
-        return MultiTenancyEntitiesProviderFactory.ID;
+        return EntitiesProviderFactory.ID;
     }
 
     @Override

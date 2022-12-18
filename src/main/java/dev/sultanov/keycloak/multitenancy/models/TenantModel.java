@@ -1,7 +1,5 @@
 package dev.sultanov.keycloak.multitenancy.models;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.KeycloakSession;
@@ -9,7 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderEvent;
 
-public interface Tenant {
+public interface TenantModel {
 
     String getId();
 
@@ -33,9 +31,9 @@ public interface Tenant {
 
     boolean hasRole(UserModel user, String role);
 
-    Stream<TenantInvitation> getInvitations();
+    Stream<TenantInvitationModel> getInvitations();
 
-    default Stream<TenantInvitation> getInvitationsByEmail(String email) {
+    default Stream<TenantInvitationModel> getInvitationsByEmail(String email) {
         return getInvitations().filter(i -> i.getEmail().equals(email));
     }
 
@@ -43,11 +41,11 @@ public interface Tenant {
 
     void revokeInvitations(String email);
 
-    TenantInvitation addInvitation(String email, UserModel inviter);
+    TenantInvitationModel addInvitation(String email, UserModel inviter);
 
     interface TenantEvent extends ProviderEvent {
 
-        Tenant getTenant();
+        TenantModel getTenant();
 
         KeycloakSession getKeycloakSession();
 

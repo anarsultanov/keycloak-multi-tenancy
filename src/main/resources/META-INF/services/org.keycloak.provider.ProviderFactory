@@ -1,1 +1,1 @@
-dev.sultanov.keycloak.multitenancy.models.jpa.TenantProviderFactory
+dev.sultanov.keycloak.multitenancy.models.jpa.JpaTenantProviderFactory

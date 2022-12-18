@@ -1,15 +1,15 @@
 package dev.sultanov.keycloak.multitenancy.models.jpa;
 
+import dev.sultanov.keycloak.multitenancy.models.TenantProviderFactory;
 import javax.persistence.EntityManager;
 import org.keycloak.Config.Scope;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderFactory;
 
-public class TenantProviderFactory implements ProviderFactory<TenantProvider> {
+public class JpaTenantProviderFactory implements TenantProviderFactory {
 
-    public static final String ID = "tenant-jpa-provider";
+    public static final String ID = "jpa-tenant-provider";
 
     @Override
     public String getId() {
@@ -17,9 +17,9 @@ public class TenantProviderFactory implements ProviderFactory<TenantProvider> {
     }
 
     @Override
-    public TenantProvider create(KeycloakSession session) {
+    public JpaTenantProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new TenantProvider(session, em);
+        return new JpaTenantProvider(session, em);
     }
 
     @Override

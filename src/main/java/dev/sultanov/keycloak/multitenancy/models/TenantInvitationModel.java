@@ -1,14 +1,13 @@
 package dev.sultanov.keycloak.multitenancy.models;
 
-import java.util.Collection;
 import java.util.Set;
 import org.keycloak.models.UserModel;
 
-public interface TenantInvitation {
+public interface TenantInvitationModel {
 
     String getId();
 
-    Tenant getTenant();
+    TenantModel getTenant();
 
     String getEmail();
 

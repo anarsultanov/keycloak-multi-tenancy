@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa;
+package dev.sultanov.keycloak.multitenancy.models.jpa.entity.provider;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
@@ -6,13 +6,13 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class MultiTenancyEntitiesProviderFactory implements JpaEntityProviderFactory {
+public class EntitiesProviderFactory implements JpaEntityProviderFactory {
 
     protected static final String ID = "multi-tenancy-entities-provider";
 
     @Override
     public JpaEntityProvider create(KeycloakSession session) {
-        return new MultiTenancyEntitiesProvider();
+        return new EntitiesProvider();
     }
 
     @Override
