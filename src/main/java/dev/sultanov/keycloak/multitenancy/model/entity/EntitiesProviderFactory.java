@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa.entity.provider;
+package dev.sultanov.keycloak.multitenancy.model.entity;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;

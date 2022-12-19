@@ -1,1 +1,1 @@
-dev.sultanov.keycloak.multitenancy.models.jpa.entity.provider.EntitiesProviderFactory
+dev.sultanov.keycloak.multitenancy.model.entity.EntitiesProviderFactory

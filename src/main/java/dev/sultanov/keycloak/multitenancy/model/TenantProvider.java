@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models;
+package dev.sultanov.keycloak.multitenancy.model;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -10,9 +10,9 @@ public interface TenantProvider extends Provider {
 
     TenantModel createTenant(RealmModel realm, String name, UserModel creator);
 
-    public Optional<TenantModel> getTenantById(RealmModel realm, String id);
+    Optional<TenantModel> getTenantById(RealmModel realm, String id);
 
     boolean deleteTenant(RealmModel realm, String id);
 
-    public Stream<TenantInvitationModel> getTenantInvitationsStream(RealmModel realm, UserModel user);
+    Stream<TenantInvitationModel> getTenantInvitationsStream(RealmModel realm, UserModel user);
 }

@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models;
+package dev.sultanov.keycloak.multitenancy.model;
 
 import java.util.Set;
 import org.keycloak.models.UserModel;

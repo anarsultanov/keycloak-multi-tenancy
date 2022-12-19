@@ -1,6 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.authentication;
 
-import dev.sultanov.keycloak.multitenancy.models.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.keycloak.models.RealmModel;
@@ -15,6 +15,14 @@ public class InvitationsData {
         this.invitations = invitations.stream()
                 .map(invitation -> new Invitation(invitation.getTenant().getId(), invitation.getTenant().getName()))
                 .collect(Collectors.toList());
+    }
+
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public List<Invitation> getInvitations() {
+        return invitations;
     }
 
     public static class Invitation {

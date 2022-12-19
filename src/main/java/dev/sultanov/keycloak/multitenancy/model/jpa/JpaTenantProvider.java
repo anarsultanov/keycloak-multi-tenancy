@@ -1,10 +1,12 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa;
+package dev.sultanov.keycloak.multitenancy.model.jpa;
 
-import dev.sultanov.keycloak.multitenancy.models.TenantInvitationModel;
-import dev.sultanov.keycloak.multitenancy.models.TenantModel;
-import dev.sultanov.keycloak.multitenancy.models.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantEntity;
-import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantInvitationEntity;
+import dev.sultanov.keycloak.multitenancy.constants.TenantRole;
+import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantModel.TenantRemovedEvent;
+import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
+import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -16,8 +18,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 public class JpaTenantProvider implements TenantProvider {
-
-    private static final String DEFAULT_TENANT_ROLE = "tenant_admin";
 
     private final KeycloakSession session;
     private final EntityManager em;
@@ -37,7 +37,7 @@ public class JpaTenantProvider implements TenantProvider {
         em.flush();
 
         TenantModel tenant = new TenantAdapter(session, realm, em, entity);
-        tenant.grantMembership(creator, Set.of(DEFAULT_TENANT_ROLE));
+        tenant.grantMembership(creator, Set.of(TenantRole.TENANT_ADMIN));
         session.getKeycloakSessionFactory().publish(tenantCreatedEvent(realm, tenant));
 
         return tenant;
@@ -71,7 +71,6 @@ public class JpaTenantProvider implements TenantProvider {
         return query.getResultStream().map(i -> new TenantInvitationAdapter(session, realm, em, i));
     }
 
-
     public TenantModel.TenantCreatedEvent tenantCreatedEvent(RealmModel realm, TenantModel tenant) {
         return new TenantModel.TenantCreatedEvent() {
             @Override
@@ -91,8 +90,8 @@ public class JpaTenantProvider implements TenantProvider {
         };
     }
 
-    public TenantModel.TenantDeletedEvent tenantDeletedEvent(RealmModel realm, TenantModel tenant) {
-        return new TenantModel.TenantDeletedEvent() {
+    public TenantRemovedEvent tenantDeletedEvent(RealmModel realm, TenantModel tenant) {
+        return new TenantRemovedEvent() {
             @Override
             public TenantModel getTenant() {
                 return tenant;

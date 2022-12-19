@@ -1,8 +1,5 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa.entity.provider;
+package dev.sultanov.keycloak.multitenancy.model.entity;
 
-import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantEntity;
-import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantInvitationEntity;
-import dev.sultanov.keycloak.multitenancy.models.jpa.entity.TenantMembershipEntity;
 import java.util.List;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 

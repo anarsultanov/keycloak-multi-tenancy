@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa.entity;
+package dev.sultanov.keycloak.multitenancy.model.entity;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -11,8 +11,10 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import org.keycloak.models.jpa.entities.UserEntity;
 
 @Table(name = "TENANT_MEMBERSHIP", uniqueConstraints = {@UniqueConstraint(columnNames = {"TENANT_ID", "USER_ID"})})
 @Entity
@@ -26,8 +28,9 @@ public class TenantMembershipEntity {
     @JoinColumn(name = "TENANT_ID")
     private TenantEntity tenant;
 
-    @Column(name = "USER_ID")
-    private String userId;
+    @OneToOne(fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinColumn(name = "USER_ID")
+    private UserEntity user;
 
     @ElementCollection
     @Column(name = "ROLE")
@@ -50,12 +53,12 @@ public class TenantMembershipEntity {
         this.tenant = tenant;
     }
 
-    public String getUserId() {
-        return userId;
+    public UserEntity getUser() {
+        return user;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setUser(UserEntity user) {
+        this.user = user;
     }
 
     public Set<String> getRoles() {

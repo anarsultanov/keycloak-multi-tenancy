@@ -1,8 +1,9 @@
 package dev.sultanov.keycloak.multitenancy.authentication;
 
-import dev.sultanov.keycloak.multitenancy.models.TenantInvitationModel;
-import dev.sultanov.keycloak.multitenancy.models.jpa.JpaTenantProvider;
+import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -20,7 +21,7 @@ public class InvitationRequiredAction implements RequiredActionProvider {
     public void evaluateTriggers(RequiredActionContext context) {
         RealmModel realm = context.getRealm();
         UserModel user = context.getUser();
-        JpaTenantProvider provider = context.getSession().getProvider(JpaTenantProvider.class);
+        TenantProvider provider = context.getSession().getProvider(TenantProvider.class);
         if (provider.getTenantInvitationsStream(realm, user).findAny().isPresent()) {
             user.addRequiredAction(InvitationRequiredActionFactory.ID);
         }
@@ -30,7 +31,7 @@ public class InvitationRequiredAction implements RequiredActionProvider {
     public void requiredActionChallenge(RequiredActionContext context) {
         RealmModel realm = context.getRealm();
         UserModel user = context.getUser();
-        JpaTenantProvider provider = context.getSession().getProvider(JpaTenantProvider.class);
+        TenantProvider provider = context.getSession().getProvider(TenantProvider.class);
         if (user.isEmailVerified() && user.getEmail() != null) {
             List<TenantInvitationModel> invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
             if (!invitations.isEmpty()) {
@@ -48,15 +49,15 @@ public class InvitationRequiredAction implements RequiredActionProvider {
         RealmModel realm = context.getRealm();
         UserModel user = context.getUser();
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        JpaTenantProvider provider = context.getSession().getProvider(JpaTenantProvider.class);
+        System.out.println(formData);
+        TenantProvider provider = context.getSession().getProvider(TenantProvider.class);
         List<String> selectedTenantIds = formData.get("invitations");
         provider.getTenantInvitationsStream(realm, user).forEach(
                 invitation -> {
                     if (selectedTenantIds.contains(invitation.getTenant().getId())) {
                         invitation.getTenant().grantMembership(user, invitation.getRoles());
-                    } else {
-                        invitation.getTenant().revokeInvitation(invitation.getId());
                     }
+                    invitation.getTenant().revokeInvitation(invitation.getId());
                 });
 
         context.success();

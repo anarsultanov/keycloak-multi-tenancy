@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa.entity;
+package dev.sultanov.keycloak.multitenancy.model.entity;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,10 +26,10 @@ public class TenantEntity {
     @Column(name = "REALM_ID", nullable = false)
     private String realmId;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "TENANT_ID")
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")
     private Collection<TenantMembershipEntity> memberships = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "TENANT_ID")
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")
     private Collection<TenantInvitationEntity> invitations = new ArrayList<>();
 
     public String getId() {

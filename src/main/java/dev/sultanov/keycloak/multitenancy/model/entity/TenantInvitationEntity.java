@@ -1,4 +1,4 @@
-package dev.sultanov.keycloak.multitenancy.models.jpa.entity;
+package dev.sultanov.keycloak.multitenancy.model.entity;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -10,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -26,7 +27,7 @@ public class TenantInvitationEntity {
     @Column(name = "ID", length = 36)
     private String id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TENANT_ID")
     private TenantEntity tenant;
 

@@ -1,6 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.authentication;
 
-import dev.sultanov.keycloak.multitenancy.models.jpa.JpaTenantProvider;
+import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
@@ -29,8 +29,8 @@ public class InvitationAuthenticator implements Authenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        JpaTenantProvider tenantProvider = session.getProvider(JpaTenantProvider.class);
-        return tenantProvider.getUserInvitations(realm, user).findAny().isEmpty();
+        TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
+        return tenantProvider.getTenantInvitationsStream(realm, user).findAny().isEmpty();
     }
 
     @Override
