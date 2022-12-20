@@ -1,1 +1,1 @@
-dev.sultanov.keycloak.multitenancy.authentication.InvitationRequiredActionFactory
+dev.sultanov.keycloak.multitenancy.authentication.ReviewTenantInvitations
