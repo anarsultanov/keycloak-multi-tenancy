@@ -10,7 +10,7 @@
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcFormOptionsClass!}">
                     <div class="${properties.kcFormOptionsWrapperClass!}">
-                        <#list invitations.tenants as tenant>
+                        <#list data.tenants as tenant>
                             <div class="checkbox">
                                 <label class="${properties.kcLabelClass!}">
                                     <input id="tenant-${tenant.id}" name="tenants" type="checkbox" value="${tenant.id}" checked> ${tenant.name}

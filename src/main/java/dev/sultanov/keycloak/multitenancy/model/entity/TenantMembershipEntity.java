@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -18,6 +19,8 @@ import org.keycloak.models.jpa.entities.UserEntity;
 
 @Table(name = "TENANT_MEMBERSHIP", uniqueConstraints = {@UniqueConstraint(columnNames = {"TENANT_ID", "USER_ID"})})
 @Entity
+@NamedQuery(name = "getMembershipsByRealmAndUserId",
+        query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.realmId = :realmId AND m.user.id = :userId")
 public class TenantMembershipEntity {
 
     @Id

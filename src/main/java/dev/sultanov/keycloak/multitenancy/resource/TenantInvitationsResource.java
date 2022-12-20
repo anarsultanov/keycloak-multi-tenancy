@@ -6,8 +6,6 @@ import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitati
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRequest;
 import java.net.URI;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -33,7 +31,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 public class TenantInvitationsResource extends AbstractAdminResource<TenantAdminAuth> {
 
-    private static final Logger logger = Logger.getLogger(TenantInvitationsResource.class.getName());
     private final TenantModel tenant;
 
     public TenantInvitationsResource(RealmModel realm, TenantModel tenant) {
@@ -48,13 +45,11 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     public Response createInvitation(TenantInvitationRequest request) {
         String email = request.getEmail();
         if (!isValidEmail(email)) {
-            logger.log(Level.INFO, "Invalid email");
             throw new BadRequestException("Invalid email: " + email);
         }
         email = email.toLowerCase();
 
         if (tenant.getInvitationsByEmail(email).findAny().isPresent()) {
-            logger.log(Level.INFO, "Invitation exists");
             throw new ClientErrorException(String.format("Invitation for %s already exists.", email), Response.Status.CONFLICT);
         }
 

@@ -2,11 +2,13 @@ package dev.sultanov.keycloak.multitenancy.model.jpa;
 
 import dev.sultanov.keycloak.multitenancy.constants.TenantRole;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel.TenantRemovedEvent;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
+import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -69,6 +71,14 @@ public class JpaTenantProvider implements TenantProvider {
         query.setParameter("realmId", realm.getId());
         query.setParameter("search", user.getEmail());
         return query.getResultStream().map(i -> new TenantInvitationAdapter(session, realm, em, i));
+    }
+
+    @Override
+    public Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user) {
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmAndUserId", TenantMembershipEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("userId", user.getId());
+        return query.getResultStream().map(m -> new TenantMembershipAdapter(session, realm, em, m));
     }
 
     public TenantModel.TenantCreatedEvent tenantCreatedEvent(RealmModel realm, TenantModel tenant) {
