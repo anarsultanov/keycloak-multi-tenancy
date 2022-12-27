@@ -35,7 +35,7 @@ public class TenantMembershipEntity {
     @JoinColumn(name = "USER_ID")
     private UserEntity user;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Column(name = "ROLE")
     @CollectionTable(name = "TENANT_MEMBERSHIP_ROLE", joinColumns = {@JoinColumn(name = "TENANT_MEMBERSHIP_ID")})
     private Set<String> roles = new HashSet<>();
