@@ -8,12 +8,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "TENANT", uniqueConstraints = {@UniqueConstraint(columnNames = {"NAME", "REALM_ID"})})
+@NamedQuery(name = "getTenantsByRealmId", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId")
 public class TenantEntity {
 
     @Id

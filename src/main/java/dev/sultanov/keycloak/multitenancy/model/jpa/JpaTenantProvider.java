@@ -56,6 +56,13 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
+    public Stream<TenantModel> getTenantsStream(RealmModel realm) {
+        TypedQuery<TenantEntity> query = em.createNamedQuery("getTenantsByRealmId", TenantEntity.class);
+        query.setParameter("realmId", realm.getId());
+        return query.getResultStream().map(t -> new TenantAdapter(session, realm, em, t));
+    }
+
+    @Override
     public boolean deleteTenant(RealmModel realm, String id) {
         getTenantById(realm, id).ifPresent(tenant -> {
             var entity = em.find(TenantEntity.class, id);

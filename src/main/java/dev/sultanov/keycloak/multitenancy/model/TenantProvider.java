@@ -12,6 +12,8 @@ public interface TenantProvider extends Provider {
 
     Optional<TenantModel> getTenantById(RealmModel realm, String id);
 
+    Stream<TenantModel> getTenantsStream(RealmModel realm);
+
     boolean deleteTenant(RealmModel realm, String id);
 
     Stream<TenantInvitationModel> getTenantInvitationsStream(RealmModel realm, UserModel user);

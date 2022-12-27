@@ -24,7 +24,6 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
         log.debug("Evaluating triggers for select active tenant action");
         var realm = context.getRealm();
         var user = context.getUser();
-
         var authSessionNote = context.getAuthenticationSession().getUserSessionNotes().get(Constants.ACTIVE_TENANT_ID_SESSION_NOTE);
         var authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
         var userSessionNote = authResult != null ? authResult.getSession().getNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE) : null;
@@ -47,10 +46,18 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
         var realm = context.getRealm();
         var user = context.getUser();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        var memberships = provider.getTenantMembershipsStream(realm, user).collect(Collectors.toList());
-        log.debug("Initializing challenge to select an active tenant");
-        Response challenge = context.form().setAttribute("data", TenantsBean.fromMembership(memberships)).createForm("select-tenant.ftl");
-        context.challenge(challenge);
+        var tenantMemberships = provider.getTenantMembershipsStream(realm, user).collect(Collectors.toList());
+        if (tenantMemberships.size() == 0) {
+            context.success();
+        } else if (tenantMemberships.size() == 1) {
+            log.debugf("User is a member of a single tenant, setting active tenant automatically");
+            context.getAuthenticationSession().setUserSessionNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE, tenantMemberships.get(0).getTenant().getId());
+            context.success();
+        } else {
+            log.debug("Initializing challenge to select an active tenant");
+            Response challenge = context.form().setAttribute("data", TenantsBean.fromMembership(tenantMemberships)).createForm("select-tenant.ftl");
+            context.challenge(challenge);
+        }
     }
 
     @Override

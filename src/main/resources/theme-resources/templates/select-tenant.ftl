@@ -1,10 +1,10 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        ${kcSanitize(msg("multiTenancySelectTenantHeader"))?no_esc}
+        ${kcSanitize(msg("selectTenantHeader"))?no_esc}
     <#elseif section = "form">
         <div id="kc-terms-text">
-            ${kcSanitize(msg("multiTenancySelectTenantInstruction"))?no_esc}
+            ${kcSanitize(msg("selectTenantMessage"))?no_esc}
         </div>
         <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
@@ -21,6 +21,5 @@
                 </div>
             </div>
         </form>
-        <div class="clearfix"></div>
     </#if>
 </@layout.registrationLayout>
