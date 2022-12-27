@@ -1,5 +1,6 @@
-package dev.sultanov.keycloak.multitenancy.authentication;
+package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
+import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import java.util.List;

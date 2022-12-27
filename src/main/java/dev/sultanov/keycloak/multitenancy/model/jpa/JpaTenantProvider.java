@@ -1,6 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
-import dev.sultanov.keycloak.multitenancy.constants.TenantRole;
+import dev.sultanov.keycloak.multitenancy.util.Constants;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
@@ -39,7 +39,7 @@ public class JpaTenantProvider implements TenantProvider {
         em.flush();
 
         TenantModel tenant = new TenantAdapter(session, realm, em, entity);
-        tenant.grantMembership(creator, Set.of(TenantRole.TENANT_ADMIN));
+        tenant.grantMembership(creator, Set.of(Constants.TENANT_ADMIN_ROLE));
         session.getKeycloakSessionFactory().publish(tenantCreatedEvent(realm, tenant));
 
         return tenant;

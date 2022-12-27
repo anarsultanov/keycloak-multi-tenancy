@@ -1,2 +1,2 @@
-dev.sultanov.keycloak.multitenancy.authentication.ReviewTenantInvitations
-dev.sultanov.keycloak.multitenancy.authentication.SelectActiveTenant
+dev.sultanov.keycloak.multitenancy.authentication.requiredactions.ReviewTenantInvitations
+dev.sultanov.keycloak.multitenancy.authentication.requiredactions.SelectActiveTenant
