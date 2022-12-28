@@ -1,15 +1,12 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=false; section>
+<@layout.registrationLayout displayMessage=false displayInfo=true; section>
     <#if section = "header">
         ${kcSanitize(msg("selectTenantHeader"))?no_esc}
     <#elseif section = "form">
-        <div id="kc-terms-text">
-            ${kcSanitize(msg("selectTenantMessage"))?no_esc}
-        </div>
         <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <label class="${properties.kcLabelWrapperClass!}">
-                    <select class="${properties.kcFormOptionsClass!}" name="tenant" required>
+                    <select class="${properties.kcInputClass!}" name="tenant" required>
                         <#list data.tenants as tenant>
                             <option value="${tenant.id}">${tenant.name}</option>
                         </#list>
@@ -21,5 +18,7 @@
                 </div>
             </div>
         </form>
+    <#elseif section = "info" >
+        ${msg("selectTenantInfo")}
     </#if>
 </@layout.registrationLayout>

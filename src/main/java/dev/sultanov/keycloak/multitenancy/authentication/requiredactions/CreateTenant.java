@@ -47,13 +47,13 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
 
         if (Validation.isBlank(tenantName)) {
             Response challenge = context.form()
-                    .addError(new FormMessage("tenantName", "tenantEmpty"))
+                    .addError(new FormMessage("tenantName", "tenantEmptyError"))
                     .createForm("create-tenant.ftl");
             context.challenge(challenge);
             return;
         } else if (provider.getTenantsStream(realm).map(TenantModel::getName).anyMatch(tenantName::equals)) {
             Response challenge = context.form()
-                    .addError(new FormMessage("tenantName", "tenantExistsMessage"))
+                    .addError(new FormMessage("tenantName", "tenantExistsError"))
                     .createForm("create-tenant.ftl");
             context.challenge(challenge);
             return;
