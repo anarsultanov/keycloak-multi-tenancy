@@ -34,10 +34,10 @@ public class ModelMapper {
         return representation;
     }
 
-    static TenantMembershipRepresentation toRepresentation(KeycloakSession session, RealmModel realm, TenantMembershipModel membership) {
+    static TenantMembershipRepresentation toRepresentation(TenantMembershipModel membership) {
         TenantMembershipRepresentation representation = new TenantMembershipRepresentation();
         representation.setId(membership.getId());
-        representation.setUser(ModelToRepresentation.toRepresentation(session, realm, membership.getUser()));
+        representation.setUser(ModelToRepresentation.toBriefRepresentation(membership.getUser()));
         representation.setRoles(membership.getRoles());
         return representation;
     }

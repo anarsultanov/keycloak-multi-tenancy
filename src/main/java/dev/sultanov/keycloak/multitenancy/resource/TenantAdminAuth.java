@@ -17,4 +17,8 @@ public class TenantAdminAuth extends AdminAuth {
     boolean isTenantAdmin(TenantModel tenantModel) {
         return tenantModel.getMembership(getUser()).filter(membership -> membership.getRoles().contains(Constants.TENANT_ADMIN_ROLE)).isPresent();
     }
+
+    boolean isTenantMember(TenantModel tenantModel) {
+        return tenantModel.getMembership(getUser()).isPresent();
+    }
 }

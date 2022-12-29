@@ -46,8 +46,9 @@ public class TenantMembershipAdapter implements TenantMembershipModel, JpaModel<
     }
 
     @Override
-    public TenantMembershipEntity getEntity() {
-        return membership;
+    public void updateRoles(Set<String> roles) {
+        membership.getRoles().clear();
+        membership.getRoles().addAll(roles);
     }
 
     @Override
@@ -58,5 +59,10 @@ public class TenantMembershipAdapter implements TenantMembershipModel, JpaModel<
     @Override
     public void removeRoles(Set<String> roles) {
         membership.getRoles().removeAll(roles);
+    }
+
+    @Override
+    public TenantMembershipEntity getEntity() {
+        return membership;
     }
 }

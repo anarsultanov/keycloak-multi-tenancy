@@ -3,7 +3,6 @@ package dev.sultanov.keycloak.multitenancy.resource;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
-import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRequest;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -39,10 +38,9 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     }
 
     @POST
-    @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createInvitation(TenantInvitationRequest request) {
+    public Response createInvitation(TenantInvitationRepresentation request) {
         String email = request.getEmail();
         if (!isValidEmail(email)) {
             throw new BadRequestException("Invalid email: " + email);
@@ -78,7 +76,6 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     }
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<TenantInvitationRepresentation> listInvitations(
             @QueryParam("search") String searchQuery,

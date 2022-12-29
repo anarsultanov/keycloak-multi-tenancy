@@ -2,6 +2,7 @@ package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
 import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.jbosslog.JBossLog;
 import org.keycloak.Config;
@@ -53,7 +54,7 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var user = context.getUser();
         var formData = context.getHttpRequest().getDecodedFormParameters();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        var selectedTenantIds = formData.get("tenants");
+        var selectedTenantIds = formData.get("tenants") != null ? formData.get("tenants") : List.of();
         provider.getTenantInvitationsStream(realm, user).forEach(
                 invitation -> {
                     if (selectedTenantIds.contains(invitation.getTenant().getId())) {

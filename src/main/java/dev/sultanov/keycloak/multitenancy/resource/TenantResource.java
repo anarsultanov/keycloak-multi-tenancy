@@ -1,6 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -21,23 +22,18 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
     }
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getTenant() {
-        return Response.ok().entity(ModelMapper.toRepresentation(tenant)).build();
+    public TenantRepresentation getTenant() {
+        return ModelMapper.toRepresentation(tenant);
     }
 
     @DELETE
-    @Path("")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteTenant() {
-
+    public void deleteTenant() {
         if (tenantProvider.deleteTenant(realm, tenant.getId())) {
             adminEvent.operation(OperationType.DELETE)
                     .resourcePath(session.getContext().getUri())
                     .success();
         }
-        return Response.status(204).build();
     }
 
     @Path("invitations")

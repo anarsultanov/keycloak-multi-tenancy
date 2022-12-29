@@ -9,7 +9,6 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PATCH;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -32,13 +31,35 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<TenantMembershipRepresentation> listMemberships(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    public Stream<TenantMembershipRepresentation> listMemberships(
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults) {
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         return tenant.getMembershipsStream()
                 .skip(firstResult)
                 .limit(maxResults)
-                .map(membership -> ModelMapper.toRepresentation(session, realm, membership));
+                .map(ModelMapper::toRepresentation);
+    }
+
+    @PATCH
+    @Path("{membershipId}/roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateRoles(@PathParam("membershipId") String membershipId, @QueryParam("roles") Set<String> roles) {
+        roles = roles != null ? roles : Set.of();
+
+        var optionalMembership = tenant.getMembershipById(membershipId);
+        if (optionalMembership.isEmpty()) {
+            throw new NotFoundException("Membership not found");
+        }
+
+        optionalMembership.get().updateRoles(roles);
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(ModelMapper.toRepresentation(optionalMembership.get()))
+                .success();
+
+        return Response.noContent().build();
     }
 
     @PATCH
@@ -57,7 +78,7 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
         optionalMembership.get().addRoles(roles);
         adminEvent.operation(OperationType.UPDATE)
                 .resourcePath(session.getContext().getUri())
-                .representation(ModelMapper.toRepresentation(session, realm, optionalMembership.get()))
+                .representation(ModelMapper.toRepresentation(optionalMembership.get()))
                 .success();
 
         return Response.noContent().build();
@@ -79,7 +100,7 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
         optionalMembership.get().removeRoles(roles);
         adminEvent.operation(OperationType.UPDATE)
                 .resourcePath(session.getContext().getUri())
-                .representation(ModelMapper.toRepresentation(session, realm, optionalMembership.get()))
+                .representation(ModelMapper.toRepresentation(optionalMembership.get()))
                 .success();
 
         return Response.noContent().build();
