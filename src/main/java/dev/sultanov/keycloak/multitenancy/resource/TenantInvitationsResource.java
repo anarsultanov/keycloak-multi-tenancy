@@ -3,6 +3,7 @@ package dev.sultanov.keycloak.multitenancy.resource;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
+import dev.sultanov.keycloak.multitenancy.util.EmailUtil;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -60,15 +61,14 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
             TenantInvitationModel invitation = tenant.addInvitation(email, auth.getUser(), request.getRoles());
             TenantInvitationRepresentation representation = ModelMapper.toRepresentation(invitation);
 
+            EmailUtil.sendInvitationEmail(session, email, tenant.getName());
+
             adminEvent.operation(OperationType.CREATE)
                     .resourcePath(session.getContext().getUri(), representation.getId())
                     .representation(representation)
                     .success();
 
             URI location = session.getContext().getUri().getAbsolutePathBuilder().path(representation.getId()).build();
-
-            // TODO: Send email
-
             return Response.created(location).build();
         } catch (Exception e) {
             throw new InternalServerErrorException(e);

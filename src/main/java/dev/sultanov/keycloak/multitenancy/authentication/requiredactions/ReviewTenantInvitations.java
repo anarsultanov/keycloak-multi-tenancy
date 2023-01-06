@@ -2,6 +2,7 @@ package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
 import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import dev.sultanov.keycloak.multitenancy.util.EmailUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.jbosslog.JBossLog;
@@ -60,8 +61,11 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
                     if (selectedTenantIds.contains(invitation.getTenant().getId())) {
                         log.debugf("%s invitation accepted, granting membership", invitation.getTenant().getName());
                         invitation.getTenant().grantMembership(user, invitation.getRoles());
+                        EmailUtil.sendInvitationAcceptedEmail(context.getSession(), invitation.getInvitedBy().getEmail(), invitation.getEmail(), invitation.getTenant().getName());
+                    } else {
+                        log.debugf("%s invitation declined and will be revoked", invitation.getTenant().getName());
+                        EmailUtil.sendInvitationDeclinedEmail(context.getSession(), invitation.getInvitedBy().getEmail(), invitation.getEmail(), invitation.getTenant().getName());
                     }
-                    log.debugf("%s invitation declined, revoking invitation", invitation.getTenant().getName());
                     invitation.getTenant().revokeInvitation(invitation.getId());
                 });
 
