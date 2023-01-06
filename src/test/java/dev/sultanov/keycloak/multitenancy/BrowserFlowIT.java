@@ -3,7 +3,6 @@ package dev.sultanov.keycloak.multitenancy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.Playwright;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
@@ -28,7 +27,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
-public class BrowserFlowTest {
+public class BrowserFlowIT {
 
     @Container
     private static final KeycloakContainer keycloak = new KeycloakContainer()
