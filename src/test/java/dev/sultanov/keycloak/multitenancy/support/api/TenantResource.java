@@ -11,12 +11,10 @@ import javax.ws.rs.core.Response;
 public interface TenantResource {
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     TenantRepresentation toRepresentation();
 
     @DELETE
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     Response deleteTenant();
 

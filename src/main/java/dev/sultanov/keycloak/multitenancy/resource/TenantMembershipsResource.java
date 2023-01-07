@@ -2,9 +2,8 @@ package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
-import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Stream;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -32,72 +31,29 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<TenantMembershipRepresentation> listMemberships(
+            @QueryParam("search") String searchQuery,
             @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
+        Optional<String> search = Optional.ofNullable(searchQuery);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         return tenant.getMembershipsStream()
+                .filter(m -> search.isEmpty() || m.getUser().getEmail().contains(search.get()))
                 .skip(firstResult)
                 .limit(maxResults)
                 .map(ModelMapper::toRepresentation);
     }
 
     @PATCH
-    @Path("{membershipId}/roles")
+    @Path("{membershipId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateRoles(@PathParam("membershipId") String membershipId, @QueryParam("roles") Set<String> roles) {
-        roles = roles != null ? roles : Set.of();
-
+    public Response update(@PathParam("membershipId") String membershipId, TenantMembershipRepresentation request) {
         var optionalMembership = tenant.getMembershipById(membershipId);
         if (optionalMembership.isEmpty()) {
             throw new NotFoundException("Membership not found");
         }
 
-        optionalMembership.get().updateRoles(roles);
-        adminEvent.operation(OperationType.UPDATE)
-                .resourcePath(session.getContext().getUri())
-                .representation(ModelMapper.toRepresentation(optionalMembership.get()))
-                .success();
-
-        return Response.noContent().build();
-    }
-
-    @PATCH
-    @Path("{membershipId}/roles/grant")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response grantRoles(@PathParam("membershipId") String membershipId, @QueryParam("roles") Set<String> roles) {
-        if (roles == null || roles.isEmpty()) {
-            throw new BadRequestException("Roles are required");
-        }
-
-        var optionalMembership = tenant.getMembershipById(membershipId);
-        if (optionalMembership.isEmpty()) {
-            throw new NotFoundException("Membership not found");
-        }
-
-        optionalMembership.get().addRoles(roles);
-        adminEvent.operation(OperationType.UPDATE)
-                .resourcePath(session.getContext().getUri())
-                .representation(ModelMapper.toRepresentation(optionalMembership.get()))
-                .success();
-
-        return Response.noContent().build();
-    }
-
-    @PATCH
-    @Path("{membershipId}/roles/revoke")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response revokeRoles(@PathParam("membershipId") String membershipId, @QueryParam("roles") Set<String> roles) {
-        if (roles == null || roles.isEmpty()) {
-            throw new BadRequestException("Roles are required");
-        }
-
-        var optionalMembership = tenant.getMembershipById(membershipId);
-        if (optionalMembership.isEmpty()) {
-            throw new NotFoundException("Membership not found");
-        }
-
-        optionalMembership.get().removeRoles(roles);
+        optionalMembership.get().updateRoles(request.getRoles());
         adminEvent.operation(OperationType.UPDATE)
                 .resourcePath(session.getContext().getUri())
                 .representation(ModelMapper.toRepresentation(optionalMembership.get()))

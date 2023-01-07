@@ -14,8 +14,4 @@ public interface TenantMembershipModel {
     Set<String> getRoles();
 
     void updateRoles(Set<String> roles);
-
-    void addRoles(Set<String> roles);
-
-    void removeRoles(Set<String> roles);
 }

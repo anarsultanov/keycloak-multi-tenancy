@@ -16,13 +16,11 @@ import javax.ws.rs.core.Response;
 public interface TenantInvitationsResource {
 
     @POST
-    @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     Response createInvitation(TenantInvitationRepresentation request);
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     List<TenantInvitationRepresentation> listInvitations(
             @QueryParam("search") String searchQuery,
