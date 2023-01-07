@@ -43,3 +43,8 @@ Now information about the selected tenant will be added to token in the followin
   }
 ```
 In the same way, you can set up `All tenants` mapper that will add to the token claims all tenants that the user is a member of.
+
+## API
+The user who creates a tenant is automatically granted the `tenant-admin` role on that tenant, which gives them access to the tenant management API:
+
+- [API documentation](http://sultanov.dev/keycloak-multi-tenancy/)
