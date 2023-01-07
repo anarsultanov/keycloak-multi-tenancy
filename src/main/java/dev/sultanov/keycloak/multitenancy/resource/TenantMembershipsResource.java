@@ -14,6 +14,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -30,10 +37,12 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "listMemberships", summary = "List tenant memberships")
+    @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantMembershipRepresentation.class)))
     public Stream<TenantMembershipRepresentation> listMemberships(
-            @QueryParam("search") String searchQuery,
-            @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Member email") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         Optional<String> search = Optional.ofNullable(searchQuery);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
@@ -47,7 +56,8 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @PATCH
     @Path("{membershipId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("membershipId") String membershipId, TenantMembershipRepresentation request) {
+    @Operation(operationId = "updateMembership", summary = "Update tenant membership")
+    public Response update(@PathParam("membershipId") String membershipId, @RequestBody(required = true) TenantMembershipRepresentation request) {
         var optionalMembership = tenant.getMembershipById(membershipId);
         if (optionalMembership.isEmpty()) {
             throw new NotFoundException("Membership not found");
@@ -64,7 +74,8 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
 
     @DELETE
     @Path("{membershipId}")
-    public Response deleteMembership(@PathParam("membershipId") String membershipId) {
+    @Operation(operationId = "revokeMembership", summary = "Revoke tenant membership")
+    public Response revokeMembership(@PathParam("membershipId") String membershipId) {
         var revoked = tenant.revokeMembership(membershipId);
         if (revoked) {
             adminEvent.operation(OperationType.DELETE)

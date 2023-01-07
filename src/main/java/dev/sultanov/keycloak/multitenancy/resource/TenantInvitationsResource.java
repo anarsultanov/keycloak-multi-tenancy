@@ -23,6 +23,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -41,7 +48,9 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createInvitation(TenantInvitationRepresentation request) {
+    @Operation(operationId = "createInvitation", summary = "Create invitation")
+    @APIResponse(responseCode = "201", description = "Created")
+    public Response createInvitation(@RequestBody(required = true) TenantInvitationRepresentation request) {
         String email = request.getEmail();
         if (!isValidEmail(email)) {
             throw new BadRequestException("Invalid email: " + email);
@@ -77,10 +86,12 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "listInvitations", summary = "List invitations")
+    @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantInvitationRepresentation.class)))
     public Stream<TenantInvitationRepresentation> listInvitations(
-            @QueryParam("search") String searchQuery,
-            @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Invitee email") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         Optional<String> search = Optional.ofNullable(searchQuery);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
@@ -93,8 +104,9 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     }
 
     @DELETE
+    @Operation(operationId = "revokeInvitation", summary = "Revoke invitation")
     @Path("{invitationId}")
-    public Response removeInvitation(@PathParam("invitationId") String invitationId) {
+    public Response revokeInvitation(@PathParam("invitationId") String invitationId) {
         var revoked = tenant.revokeInvitation(invitationId);
         if (revoked) {
             adminEvent.operation(OperationType.DELETE)

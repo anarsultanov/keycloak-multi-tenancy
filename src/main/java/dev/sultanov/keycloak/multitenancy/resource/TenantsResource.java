@@ -15,11 +15,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 
+@Path("")
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     public TenantsResource(RealmModel realm) {
@@ -29,7 +37,9 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createTenant(TenantRepresentation request) {
+    @Operation(operationId = "createTenant", summary = "Create a tenant")
+    @APIResponse(responseCode = "201", description = "Created")
+    public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
 
         TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
         TenantRepresentation representation = ModelMapper.toRepresentation(model);
@@ -44,10 +54,12 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "listTenants", summary = "List tenants")
+    @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantRepresentation.class)))
     public Stream<TenantRepresentation> listTenants(
-            @QueryParam("search") String searchQuery,
-            @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Tenant name") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         Optional<String> search = Optional.ofNullable(searchQuery);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;

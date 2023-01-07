@@ -29,6 +29,6 @@ public interface TenantInvitationsResource {
 
     @DELETE
     @Path("{invitationId}")
-    Response removeInvitation(@PathParam("invitationId") String invitationId);
+    Response revokeInvitation(@PathParam("invitationId") String invitationId);
 
 }

@@ -7,7 +7,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.RealmModel;
@@ -23,11 +23,13 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getTenant", summary = "Get tenant")
     public TenantRepresentation getTenant() {
         return ModelMapper.toRepresentation(tenant);
     }
 
     @DELETE
+    @Operation(operationId = "deleteTenant", summary = "Delete tenant")
     public void deleteTenant() {
         if (tenantProvider.deleteTenant(realm, tenant.getId())) {
             adminEvent.operation(OperationType.DELETE)

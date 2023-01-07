@@ -28,5 +28,5 @@ public interface TenantMembershipsResource {
 
     @DELETE
     @Path("{membershipId}")
-    Response deleteMembership(@PathParam("membershipId") String membershipId);
+    Response revokeMembership(@PathParam("membershipId") String membershipId);
 }
