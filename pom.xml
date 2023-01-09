@@ -173,6 +173,7 @@
                     <outputDirectory>${project.basedir}/docs</outputDirectory>
                     <infoTitle>${project.name}</infoTitle>
                     <infoVersion>${project.version}</infoVersion>
+                    <servers>{{keycloakUrl}}/auth/realms/{{realmName}}/tenants</servers>
                 </configuration>
             </plugin>
         </plugins>

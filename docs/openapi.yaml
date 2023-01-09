@@ -3,6 +3,8 @@ openapi: 3.0.3
 info:
   title: Keycloak Multi-Tenancy
   version: 0.0.1
+servers:
+- url: "{{keycloakUrl}}/auth/realms/{{realmName}}/tenants"
 paths:
   /:
     get:
