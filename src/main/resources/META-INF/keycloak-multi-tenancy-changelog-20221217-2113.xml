@@ -33,7 +33,7 @@
         <addForeignKeyConstraint baseColumnNames="TENANT_ID" baseTableName="TENANT_MEMBERSHIP" constraintName="FK_TENANT_MEMBERSHIP_TENANT_ID"
                 referencedColumnNames="ID" referencedTableName="TENANT"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="TENANT_MEMBERSHIP" constraintName="FK_TENANT_MEMBERSHIP_USER_ENTITY"
-                referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+                referencedColumnNames="ID" referencedTableName="USER_ENTITY" onDelete="CASCADE"/>
         <addUniqueConstraint columnNames="TENANT_ID,USER_ID" constraintName="UQ_TENANT_MEMBERSHIP_TENANT_ID_USER_ID" tableName="TENANT_MEMBERSHIP"/>
 
         <createTable tableName="TENANT_MEMBERSHIP_ROLE">
