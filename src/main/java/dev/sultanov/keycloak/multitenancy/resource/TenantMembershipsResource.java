@@ -4,6 +4,7 @@ import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -35,7 +36,6 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     }
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "listMemberships", summary = "List tenant memberships")
     @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantMembershipRepresentation.class)))
@@ -56,6 +56,7 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @PATCH
     @Path("{membershipId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(value = MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateMembership", summary = "Update tenant membership")
     public Response update(@PathParam("membershipId") String membershipId, @RequestBody(required = true) TenantMembershipRepresentation request) {
         var optionalMembership = tenant.getMembershipById(membershipId);

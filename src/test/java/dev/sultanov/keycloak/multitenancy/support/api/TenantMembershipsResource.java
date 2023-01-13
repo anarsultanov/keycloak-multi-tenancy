@@ -2,6 +2,7 @@ package dev.sultanov.keycloak.multitenancy.support.api;
 
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
 import java.util.List;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
@@ -24,7 +25,8 @@ public interface TenantMembershipsResource {
     @PATCH
     @Path("{membershipId}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response update(@PathParam("membershipId") String membershipId, TenantMembershipsResource request);
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response update(@PathParam("membershipId") String membershipId, TenantMembershipRepresentation request);
 
     @DELETE
     @Path("{membershipId}")
