@@ -157,7 +157,8 @@
                     <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter"/>
                 </configuration>
             </plugin>
-            <plugin>
+            <!-- Uncomment plugin and add @Path("") to TenantsResource to generate updated OpenAPI schema-->
+            <!--<plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <version>3.1.1</version>
@@ -175,7 +176,7 @@
                     <infoVersion>${project.version}</infoVersion>
                     <servers>{{keycloakUrl}}/auth/realms/{{realmName}}/tenants</servers>
                 </configuration>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
 </project>

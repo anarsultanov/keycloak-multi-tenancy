@@ -27,7 +27,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 
-@Path("")
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     public TenantsResource(RealmModel realm) {
