@@ -4,9 +4,9 @@ info:
   title: Keycloak Multi-Tenancy
   version: 0.0.1
 servers:
-- url: "{{keycloakUrl}}/auth/realms/{{realmName}}/tenants"
+- url: "{{keycloakUrl}}/auth/realms/{{realmName}}"
 paths:
-  /:
+  /tenants:
     get:
       summary: List tenants
       operationId: listTenants
@@ -49,7 +49,7 @@ paths:
       responses:
         "201":
           description: Created
-  /{tenantId}:
+  /tenants/{tenantId}:
     get:
       summary: Get tenant
       operationId: getTenant
@@ -72,7 +72,7 @@ paths:
       required: true
       schema:
         type: string
-  /{tenantId}/invitations:
+  /tenants/{tenantId}/invitations:
     get:
       summary: List invitations
       operationId: listInvitations
@@ -121,7 +121,7 @@ paths:
       required: true
       schema:
         type: string
-  /{tenantId}/invitations/{invitationId}:
+  /tenants/{tenantId}/invitations/{invitationId}:
     delete:
       summary: Revoke invitation
       operationId: revokeInvitation
@@ -140,7 +140,7 @@ paths:
       required: true
       schema:
         type: string
-  /{tenantId}/memberships:
+  /tenants/{tenantId}/memberships:
     get:
       summary: List tenant memberships
       operationId: listMemberships
@@ -177,7 +177,7 @@ paths:
       required: true
       schema:
         type: string
-  /{tenantId}/memberships/{membershipId}:
+  /tenants/{tenantId}/memberships/{membershipId}:
     delete:
       summary: Revoke tenant membership
       operationId: revokeMembership

@@ -5,10 +5,10 @@
     "version" : "0.0.1"
   },
   "servers" : [ {
-    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}/tenants"
+    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
   } ],
   "paths" : {
-    "/" : {
+    "/tenants" : {
       "get" : {
         "summary" : "List tenants",
         "operationId" : "listTenants",
@@ -72,7 +72,7 @@
         }
       }
     },
-    "/{tenantId}" : {
+    "/tenants/{tenantId}" : {
       "get" : {
         "summary" : "Get tenant",
         "operationId" : "getTenant",
@@ -107,7 +107,7 @@
         }
       } ]
     },
-    "/{tenantId}/invitations" : {
+    "/tenants/{tenantId}/invitations" : {
       "get" : {
         "summary" : "List invitations",
         "operationId" : "listInvitations",
@@ -179,7 +179,7 @@
         }
       } ]
     },
-    "/{tenantId}/invitations/{invitationId}" : {
+    "/tenants/{tenantId}/invitations/{invitationId}" : {
       "delete" : {
         "summary" : "Revoke invitation",
         "operationId" : "revokeInvitation",
@@ -206,7 +206,7 @@
         }
       } ]
     },
-    "/{tenantId}/memberships" : {
+    "/tenants/{tenantId}/memberships" : {
       "get" : {
         "summary" : "List tenant memberships",
         "operationId" : "listMemberships",
@@ -259,7 +259,7 @@
         }
       } ]
     },
-    "/{tenantId}/memberships/{membershipId}" : {
+    "/tenants/{tenantId}/memberships/{membershipId}" : {
       "delete" : {
         "summary" : "Revoke tenant membership",
         "operationId" : "revokeMembership",

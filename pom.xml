@@ -10,7 +10,7 @@
     <name>Keycloak Multi-Tenancy</name>
 
     <properties>
-        <keycloak.version>20.0.2</keycloak.version>
+        <keycloak.version>21.0.1</keycloak.version>
     </properties>
 
     <dependencies>
@@ -47,33 +47,33 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.24</version>
+            <version>1.18.26</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api-jaxrs</artifactId>
-            <version>3.1.1</version>
+            <version>3.4.0</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.28.1</version>
+            <version>1.31.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.1</version>
+            <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.23.1</version>
+            <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -157,11 +157,10 @@
                     <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter"/>
                 </configuration>
             </plugin>
-            <!-- Uncomment plugin and add @Path("") to TenantsResource to generate updated OpenAPI schema-->
-            <!--<plugin>
+            <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
@@ -174,9 +173,12 @@
                     <outputDirectory>${project.basedir}/docs</outputDirectory>
                     <infoTitle>${project.name}</infoTitle>
                     <infoVersion>${project.version}</infoVersion>
-                    <servers>{{keycloakUrl}}/auth/realms/{{realmName}}/tenants</servers>
+                    <servers>{{keycloakUrl}}/auth/realms/{{realmName}}</servers>
+                    <scanResourceClasses>
+                        <dev.sultanov.keycloak.multitenancy.resource.TenantsResource>/tenants</dev.sultanov.keycloak.multitenancy.resource.TenantsResource>
+                    </scanResourceClasses>
                 </configuration>
-            </plugin>-->
+            </plugin>
         </plugins>
     </build>
 </project>
