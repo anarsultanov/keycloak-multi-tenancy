@@ -1,4 +1,6 @@
 # Keycloak Multi-Tenancy
+[![CodeQL](https://github.com/anarsultanov/keycloak-multi-tenancy/actions/workflows/codeql.yml/badge.svg)](https://github.com/anarsultanov/keycloak-multi-tenancy/actions/workflows/codeql.yml)
+
 Keycloak extension for creating multi-tenant IAM for B2B SaaS applications.
 
 ## Features
