@@ -14,7 +14,7 @@ public class AccountPage extends AbstractPage {
     public static AccountPage open(Browser browser, String keycloakUrl) {
         var browserContext = browser.newContext();
         var page = browserContext.newPage();
-        page.navigate(keycloakUrl + "realms/multi-tenant/account/#/");
+        page.navigate(keycloakUrl + "/realms/multi-tenant/account/#/");
         return new AccountPage(page);
     }
 

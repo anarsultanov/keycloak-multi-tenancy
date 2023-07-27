@@ -20,7 +20,7 @@ import org.keycloak.services.Urls;
 public class EmailUtil {
 
     public static void sendInvitationEmail(KeycloakSession session, String recipientEmail, String tenantName) {
-        var accountPageUri = Urls.accountPage(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName()).toString();
+        var accountPageUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(session.getContext().getRealm().getName());
         var bodyAttributes = new HashMap<String, Object>();
         bodyAttributes.put("tenantName", tenantName);
         bodyAttributes.put("accountPageUri", accountPageUri);

@@ -1,7 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.support.api;
 
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
-import javax.ws.rs.client.Client;
+import jakarta.ws.rs.client.Client;
 import org.keycloak.admin.client.spi.ResteasyClientClassicProvider;
 
 public class KeycloakClientFactory {

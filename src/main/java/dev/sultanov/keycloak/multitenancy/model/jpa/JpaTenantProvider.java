@@ -1,6 +1,5 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
-import dev.sultanov.keycloak.multitenancy.util.Constants;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
@@ -9,11 +8,12 @@ import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
+import dev.sultanov.keycloak.multitenancy.util.Constants;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;

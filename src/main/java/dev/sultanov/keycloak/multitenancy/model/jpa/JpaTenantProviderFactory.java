@@ -1,7 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantProviderFactory;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.keycloak.Config.Scope;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;

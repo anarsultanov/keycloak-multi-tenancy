@@ -1,8 +1,8 @@
 package dev.sultanov.keycloak.multitenancy.support.api;
 
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
+import jakarta.ws.rs.client.Client;
 import java.net.URI;
-import javax.ws.rs.client.Client;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;

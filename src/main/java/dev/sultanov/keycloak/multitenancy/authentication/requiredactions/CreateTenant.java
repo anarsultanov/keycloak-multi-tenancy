@@ -2,7 +2,7 @@ package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import lombok.extern.jbosslog.JBossLog;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
