@@ -1,0 +1,43 @@
+name: "Release"
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Update POM Version
+        run: mvn org.codehaus.mojo:versions-maven-plugin:2.8.1:set -DnewVersion=${{  github.ref_name }}
+
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
+
+      - name: Prepare artifacts
+        run: mkdir staging && cp target/*.jar staging
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Package
+          path: staging
+          retention-days: 1
+
+      - name: Create GitHub release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: staging/*.jar
