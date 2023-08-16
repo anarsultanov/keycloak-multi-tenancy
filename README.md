@@ -9,6 +9,10 @@ Keycloak extension for creating multi-tenant IAM for B2B SaaS applications.
 - Review of pending invitations (Required action)
 - Selection of active tenant on login (Required action)
 
+## Compatibility
+This extension aims to support the most recent version of Keycloak. 
+The major version of the extension is tested and designed to work with the corresponding major version of Keycloak.
+
 ## Build
 Clone the repository and run `mvn package` command from the project directory.
 This will produce a JAR in the `target/` directory.
