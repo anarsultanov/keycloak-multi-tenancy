@@ -1,9 +1,7 @@
 name: "Release"
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,6 +9,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -19,8 +19,30 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+
+      - name: "Generate changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fromTag: ${{ steps.version.outputs.previous-version }}
+          toTag: ${{ github.ref }}
+          commitMode: true
+          configurationJson: |
+            {
+              "template": "## What's Changed\n#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{TITLE}}",
+              "categories": []
+            }
+
       - name: Update POM Version
-        run: mvn org.codehaus.mojo:versions-maven-plugin:2.8.1:set -DnewVersion=${{  github.ref_name }}
+        shell: bash
+        run: mvn versions:set -DnewVersion=${{ steps.version.outputs.version }}
 
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
@@ -35,9 +57,17 @@ jobs:
           path: staging
           retention-days: 1
 
-      - name: Create GitHub release
-        uses: marvinpinto/action-automatic-releases@latest
+      - name: Commit New Version
+        uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
+          commit_message: "chore: Set version to ${{ steps.version.outputs.version }}"
+          file_pattern: 'pom.xml docs/openapi.json docs/openapi.yaml'
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
           files: staging/*.jar
+          tag_name: ${{ steps.version.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          body: ${{steps.build_changelog.outputs.changelog}}
