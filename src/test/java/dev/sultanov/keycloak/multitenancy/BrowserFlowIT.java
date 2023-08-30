@@ -6,6 +6,7 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.Playwright;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
 import dev.sultanov.keycloak.multitenancy.support.api.KeycloakClient;
 import dev.sultanov.keycloak.multitenancy.support.api.KeycloakClientFactory;
@@ -17,6 +18,7 @@ import dev.sultanov.keycloak.multitenancy.support.data.TenantData;
 import dev.sultanov.keycloak.multitenancy.support.data.TestDataFactory;
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
 import java.util.List;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -130,6 +132,39 @@ public class BrowserFlowIT {
         assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getFullName());
     }
 
+    @Test
+    void admin_shouldBeAbleToRevokeMembership_whenUserAcceptsInvitation() {
+        // given
+        var admin = createVerifiedUser(TestDataFactory.userData());
+        var user = createVerifiedUser(TestDataFactory.userData());
+
+        var tenantData = createInvitationFor(admin, user);
+        var nextPage = AccountPage.open(browser, keycloakUrl)
+                .signIn()
+                .fillCredentials(user.getEmail(), user.getPassword())
+                .signIn();
+        assertThat(nextPage).isInstanceOf(ReviewInvitationsPage.class);
+        ((ReviewInvitationsPage) nextPage).accept();
+
+        var adminTenantResource = clientFactory.createUserClient(admin).tenantResource(tenantData.getName());
+        var userMembership = adminTenantResource.memberships().listMemberships("", null, null).stream()
+                .filter(membership -> membership.getUser().getEmail().equalsIgnoreCase(user.getEmail()))
+                .findFirst()
+                .orElseThrow();
+
+        // when
+        try (var response = adminTenantResource.memberships().revokeMembership(userMembership.getId())) {
+
+            // then
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_NO_CONTENT);
+            assertThat(adminTenantResource.memberships().listMemberships("", null, null))
+                    .extracting(TenantMembershipRepresentation::getUser)
+                    .extracting(UserRepresentation::getEmail)
+                    .extracting(String::toLowerCase)
+                    .containsExactly(admin.getEmail().toLowerCase());
+        }
+    }
+
     private UserData createVerifiedUser(UserData userData) {
         var userRepresentation = new UserRepresentation();
         userRepresentation.setFirstName(userData.getFirstName());
@@ -148,8 +183,12 @@ public class BrowserFlowIT {
         return userData;
     }
 
-    private TenantData createInvitationFor(UserData user) {
+    private TenantData createInvitationFor(UserData invitee) {
         var inviter = createVerifiedUser(TestDataFactory.userData());
+        return createInvitationFor(inviter, invitee);
+    }
+
+    private TenantData createInvitationFor(UserData inviter, UserData invitee) {
         var tenant = TestDataFactory.tenantData();
         ((CreateTenantPage) AccountPage.open(browser, keycloakUrl)
                 .signIn()
@@ -166,7 +205,7 @@ public class BrowserFlowIT {
                 .orElseThrow();
 
         var invitation = new TenantInvitationRepresentation();
-        invitation.setEmail(user.getEmail());
+        invitation.setEmail(invitee.getEmail());
         try (var response = tenantResource.invitations().createInvitation(invitation)) {
             assertThat(CreatedResponseUtil.getCreatedId(response)).isNotNull();
         }

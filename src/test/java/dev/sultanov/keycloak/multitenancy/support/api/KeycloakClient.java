@@ -55,4 +55,15 @@ public class KeycloakClient {
     public TenantsResource tenantsResource() {
         return keycloak.proxy(TenantsResource.class, URI.create(keycloakUrl + "/realms/" + REALM_NAME));
     }
+
+    public TenantResource tenantResource(String tenantName) {
+        var tenantsResource = tenantsResource();
+        var matchingTenants = tenantsResource.listTenants(tenantName, null, null);
+        if (matchingTenants == null || matchingTenants.isEmpty()) {
+            throw new IllegalArgumentException("No tenants found with name: " + tenantName);
+        } else if (matchingTenants.size() > 1) {
+            throw new IllegalArgumentException("More than 1 tenant found with name matching: " + tenantName);
+        }
+        return tenantsResource.getTenantResource(matchingTenants.get(0).getId());
+    }
 }

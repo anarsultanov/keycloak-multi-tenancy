@@ -31,7 +31,7 @@ public class TenantMembershipEntity {
     @JoinColumn(name = "TENANT_ID")
     private TenantEntity tenant;
 
-    @OneToOne(fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID")
     private UserEntity user;
 
