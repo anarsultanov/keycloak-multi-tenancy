@@ -1034,7 +1034,7 @@
     "starttls": "",
     "auth": "",
     "port": "1025",
-    "host": "localhost",
+    "host": "mailhog",
     "from": "no-reply@localhost",
     "ssl": ""
   },
@@ -1209,7 +1209,10 @@
     ]
   },
   "internationalizationEnabled": false,
-  "supportedLocales": [],
+  "supportedLocales": [
+    "sv",
+    "en"
+  ],
   "authenticationFlows": [
     {
       "id": "0c1a0f3f-8d7d-4805-9897-da23568edeee",

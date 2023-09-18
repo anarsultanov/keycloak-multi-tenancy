@@ -3,6 +3,8 @@ package dev.sultanov.keycloak.multitenancy.support.browser;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContext;
+import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContextHolder;
 import java.util.Optional;
 
 public class AccountPage extends AbstractPage {
@@ -11,10 +13,12 @@ public class AccountPage extends AbstractPage {
         super(page);
     }
 
-    public static AccountPage open(Browser browser, String keycloakUrl) {
-        var browserContext = browser.newContext();
+    @SuppressWarnings("resource")
+    public static AccountPage open() {
+        var integrationTestContext = IntegrationTestContextHolder.getContext();
+        var browserContext = integrationTestContext.browser().newContext();
         var page = browserContext.newPage();
-        page.navigate(keycloakUrl + "/realms/multi-tenant/account/#/");
+        page.navigate(integrationTestContext.keycloakUrl() + "/realms/multi-tenant/account/#/");
         return new AccountPage(page);
     }
 
