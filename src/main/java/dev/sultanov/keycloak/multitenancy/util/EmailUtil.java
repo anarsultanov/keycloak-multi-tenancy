@@ -71,6 +71,11 @@ public class EmailUtil {
             return new HashMap<>();
         }
 
+        @Override
+        public String getFirstAttribute(String name) {
+            return null;
+        }
+
         // All other methods are not required and therefore throw an exception
 
         @Override
@@ -120,11 +125,6 @@ public class EmailUtil {
 
         @Override
         public void removeAttribute(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getFirstAttribute(String name) {
             throw new UnsupportedOperationException();
         }
 
