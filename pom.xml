@@ -10,7 +10,7 @@
     <name>Keycloak Multi-Tenancy</name>
 
     <properties>
-        <keycloak.version>22.0.1</keycloak.version>
+        <keycloak.version>22.0.3</keycloak.version>
     </properties>
 
     <dependencies>
@@ -47,27 +47,27 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
+            <version>1.18.28</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api-jaxrs</artifactId>
-            <version>3.4.0</version>
+            <version>3.5.2</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.31.0</version>
+            <version>1.37.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.2</version>
+            <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.17.6</version>
+            <version>1.18.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -100,7 +100,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>17</source>
                     <target>17</target>
@@ -109,17 +109,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.5.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M7</version>
+                <version>3.1.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
                         <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
-                        <version>0.1.0</version>
+                        <version>1.2.1</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -133,7 +133,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M7</version>
+                <version>3.1.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -146,7 +146,7 @@
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
                         <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
-                        <version>0.1.0</version>
+                        <version>1.2.1</version>
                     </dependency>
                 </dependencies>
                 <configuration>
