@@ -9,6 +9,7 @@ import dev.sultanov.keycloak.multitenancy.support.browser.CreateTenantPage;
 import dev.sultanov.keycloak.multitenancy.support.data.TenantData;
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
 import java.net.URI;
+import java.util.Objects;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -18,15 +19,21 @@ public class KeycloakUser {
     private static final String REALM_NAME = "multi-tenant";
     private static final String CLIENT_ID = "multi-tenant";
 
+    private final String userId;
     private final UserData userData;
     private TenantData tenantData;
 
-    private KeycloakUser(UserData userData) {
-        this.userData = userData;
+    private KeycloakUser(String userId, UserData userData) {
+        this.userId = Objects.requireNonNull(userId);
+        this.userData = Objects.requireNonNull(userData);
     }
 
-    static KeycloakUser from(UserData userData) {
-        return new KeycloakUser(userData);
+    static KeycloakUser from(String userId, UserData userData) {
+        return new KeycloakUser(userId, userData);
+    }
+
+    public String getUserId() {
+        return userId;
     }
 
     public UserData getUserData() {

@@ -1,9 +1,12 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import static org.keycloak.locale.LocaleSelectorProvider.USER_REQUEST_LOCALE;
+
+import dev.sultanov.keycloak.multitenancy.email.EmailRecipient;
+import dev.sultanov.keycloak.multitenancy.email.EmailSender;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
-import dev.sultanov.keycloak.multitenancy.util.EmailUtil;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.ws.rs.BadRequestException;
@@ -70,7 +73,10 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
             TenantInvitationModel invitation = tenant.addInvitation(email, auth.getUser(), request.getRoles());
             TenantInvitationRepresentation representation = ModelMapper.toRepresentation(invitation);
 
-            EmailUtil.sendInvitationEmail(session, email, tenant.getName());
+            session.setAttribute(USER_REQUEST_LOCALE, request.getLocale());
+            var invitee = Optional.ofNullable(session.users().getUserByEmail(realm, email))
+                    .orElse(new EmailRecipient(email));
+            EmailSender.sendInvitationEmail(session, invitee, tenant.getName());
 
             adminEvent.operation(OperationType.CREATE)
                     .resourcePath(session.getContext().getUri(), representation.getId())

@@ -18,6 +18,9 @@ public class TenantInvitationRepresentation {
     @Schema(required = true)
     private String email;
 
+    @Schema
+    private String locale;
+
     @Schema(required = true)
     private Set<String> roles = new HashSet<>();
 

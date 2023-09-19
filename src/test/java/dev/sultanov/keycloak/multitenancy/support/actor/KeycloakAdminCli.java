@@ -1,14 +1,14 @@
 package dev.sultanov.keycloak.multitenancy.support.actor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContextHolder;
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
 import java.util.List;
+import java.util.Map;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -38,6 +38,10 @@ public class KeycloakAdminCli {
     }
 
     public KeycloakUser createVerifiedUser() {
+        return createVerifiedUser(Map.of());
+    }
+
+    public KeycloakUser createVerifiedUser(Map<String, List<String>> attributes) {
         var userData = UserData.random();
         var userRepresentation = new UserRepresentation();
         userRepresentation.setFirstName(userData.getFirstName());
@@ -45,6 +49,7 @@ public class KeycloakAdminCli {
         userRepresentation.setEmail(userData.getEmail());
         userRepresentation.setEmailVerified(true);
         userRepresentation.setEnabled(true);
+        userRepresentation.setAttributes(attributes);
         var credentialRepresentation = new CredentialRepresentation();
         credentialRepresentation.setType(CredentialRepresentation.PASSWORD);
         credentialRepresentation.setValue(userData.getPassword());
@@ -52,8 +57,11 @@ public class KeycloakAdminCli {
         userRepresentation.setCredentials(List.of(credentialRepresentation));
         try (var response = keycloak.realm(REALM_NAME).users().create(userRepresentation)) {
             var createdId = CreatedResponseUtil.getCreatedId(response);
-            assertThat(createdId).isNotNull();
-            return KeycloakUser.from(userData);
+            return KeycloakUser.from(createdId, userData);
         }
+    }
+
+    public RealmResource getRealmResource() {
+        return keycloak.realm(REALM_NAME);
     }
 }

@@ -1,8 +1,9 @@
 package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
 import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
+import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.util.EmailUtil;
+import dev.sultanov.keycloak.multitenancy.email.EmailSender;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.jbosslog.JBossLog;
@@ -12,6 +13,7 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserModel;
 
 @JBossLog
 public class ReviewTenantInvitations implements RequiredActionProvider, RequiredActionFactory {
@@ -56,18 +58,7 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var formData = context.getHttpRequest().getDecodedFormParameters();
         var provider = context.getSession().getProvider(TenantProvider.class);
         var selectedTenantIds = formData.get("tenants") != null ? formData.get("tenants") : List.of();
-        provider.getTenantInvitationsStream(realm, user).forEach(
-                invitation -> {
-                    if (selectedTenantIds.contains(invitation.getTenant().getId())) {
-                        log.debugf("%s invitation accepted, granting membership", invitation.getTenant().getName());
-                        invitation.getTenant().grantMembership(user, invitation.getRoles());
-                        EmailUtil.sendInvitationAcceptedEmail(context.getSession(), invitation.getInvitedBy().getEmail(), invitation.getEmail(), invitation.getTenant().getName());
-                    } else {
-                        log.debugf("%s invitation declined and will be revoked", invitation.getTenant().getName());
-                        EmailUtil.sendInvitationDeclinedEmail(context.getSession(), invitation.getInvitedBy().getEmail(), invitation.getEmail(), invitation.getTenant().getName());
-                    }
-                    invitation.getTenant().revokeInvitation(invitation.getId());
-                });
+        provider.getTenantInvitationsStream(realm, user).forEach(invitation -> processInvitation(context, user, selectedTenantIds, invitation));
 
         // This action changes user memberships, so we need to re-evaluate required actions.
         if (provider.getTenantMembershipsStream(realm, user).findAny().isPresent()) {
@@ -75,6 +66,23 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             user.addRequiredAction(SelectActiveTenant.ID);
         }
         context.success();
+    }
+
+    private static void processInvitation(RequiredActionContext context, UserModel user, List<?> selectedTenantIds, TenantInvitationModel invitation) {
+        var inviter = invitation.getInvitedBy();
+        if (selectedTenantIds.contains(invitation.getTenant().getId())) {
+            log.debugf("%s invitation accepted, granting membership", invitation.getTenant().getName());
+            invitation.getTenant().grantMembership(user, invitation.getRoles());
+            if (inviter != null) {
+                EmailSender.sendInvitationAcceptedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
+            }
+        } else {
+            log.debugf("%s invitation declined and will be revoked", invitation.getTenant().getName());
+            if (inviter != null) {
+                EmailSender.sendInvitationDeclinedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
+            }
+        }
+        invitation.getTenant().revokeInvitation(invitation.getId());
     }
 
     @Override
