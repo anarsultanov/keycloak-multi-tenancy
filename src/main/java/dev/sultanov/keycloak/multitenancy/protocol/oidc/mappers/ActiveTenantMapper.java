@@ -27,7 +27,6 @@ public class ActiveTenantMapper extends AbstractOIDCProtocolMapper implements OI
 
     public static final String PROVIDER_ID = "oidc-active-tenant-mapper";
 
-
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
@@ -55,15 +54,23 @@ public class ActiveTenantMapper extends AbstractOIDCProtocolMapper implements OI
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
             ClientSessionContext clientSessionCtx) {
+        var tenantProvider = userSession.getNote(Constants.ACTIVE_TENANT_PROVIDER_SESSION_NOTE);
         var activeTenantId = userSession.getNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE);
-        var provider = keycloakSession.getProvider(TenantProvider.class);
-        provider.getTenantMembershipsStream(userSession.getRealm(), userSession.getUser())
-                .filter(membership -> membership.getTenant().getId().equals(activeTenantId))
-                .map(ClaimsFactory::toClaim)
-                .findFirst()
-                .ifPresent(claim -> {
-                    var claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-                    token.getOtherClaims().put(claimName, claim);
-                });
+        if (tenantProvider == Constants.KEYCLOAK_TENANT_PROVIDER_CLAIM) {
+            var provider = keycloakSession.getProvider(TenantProvider.class);
+            provider.getTenantMembershipsStream(userSession.getRealm(), userSession.getUser())
+                    .filter(membership -> membership.getTenant().getId().equals(activeTenantId))
+                    .map(ClaimsFactory::toClaim)
+                    .findFirst()
+                    .ifPresent(claim -> {
+                        var claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+                        token.getOtherClaims().put(claimName, claim);
+                    });
+        } else if (tenantProvider instanceof String && tenantProvider.length() > 0) {
+            List<String> roles = userSession.getUser().getAttributes().get("idp_roles");
+            roles = (roles != null) ? roles : new ArrayList<String>();
+            var claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+            token.getOtherClaims().put(claimName, ClaimsFactory.toClaim(activeTenantId, tenantProvider, roles));
+        }
     }
 }
