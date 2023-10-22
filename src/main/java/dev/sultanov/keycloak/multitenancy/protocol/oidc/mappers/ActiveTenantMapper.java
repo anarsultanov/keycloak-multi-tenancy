@@ -4,6 +4,8 @@ import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -69,6 +71,9 @@ public class ActiveTenantMapper extends AbstractOIDCProtocolMapper implements OI
         } else if (tenantProvider instanceof String && tenantProvider.length() > 0) {
             List<String> roles = userSession.getUser().getAttributes().get("idp_roles");
             roles = (roles != null) ? roles : new ArrayList<String>();
+            roles = roles.stream()
+                    .filter(role -> !role.equals(Constants.TENANT_ADMIN_ROLE))
+                    .collect(Collectors.toList());
             var claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
             token.getOtherClaims().put(claimName, ClaimsFactory.toClaim(activeTenantId, tenantProvider, roles));
         }
