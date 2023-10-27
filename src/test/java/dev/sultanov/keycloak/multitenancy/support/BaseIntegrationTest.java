@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.support;
 
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Playwright;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.client.Client;
@@ -18,18 +19,21 @@ public class BaseIntegrationTest {
 
     private static final Network network = Network.newNetwork();
     private static final KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:22.0.3")
-            .withRealmImportFile("/realm-export.json")
+            .withRealmImportFiles("/realm-export.json", "/idp-realm-export.json")
             .withProviderClassesFrom("target/classes")
-            .withNetwork(network);
+            .withNetwork(network)
+            .withNetworkAliases("keycloak")
+            .withAccessToHost(true);
+
     private static final GenericContainer<?> mailhog = new GenericContainer<>("mailhog/mailhog")
             .withExposedPorts(MAILHOG_HTTP_PORT)
             .waitingFor(Wait.forHttp("/"))
             .withNetwork(network)
-            .withNetworkAliases("mailhog");
+            .withNetworkAliases("mailhog")
+            .withAccessToHost(true);
 
     private static Client client;
     private static Playwright playwright;
-
 
     @BeforeAll
     static void beforeAll() {
@@ -38,7 +42,7 @@ public class BaseIntegrationTest {
 
         client = ClientBuilder.newClient();
         playwright = Playwright.create();
-        var browser = playwright.chromium().launch();
+        var browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
 
         var keycloakUrl = keycloak.getAuthServerUrl();
         var mailhogUrl = "http://%s:%d/".formatted(mailhog.getHost(), mailhog.getMappedPort(MAILHOG_HTTP_PORT));

@@ -21,7 +21,7 @@ public class BrowserIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        keycloakAdminClient = KeycloakAdminCli.create();
+        keycloakAdminClient = KeycloakAdminCli.forMainRealm();
     }
 
     @Test

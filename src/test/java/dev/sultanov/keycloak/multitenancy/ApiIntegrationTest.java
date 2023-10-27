@@ -20,7 +20,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        keycloakAdminClient = KeycloakAdminCli.create();
+        keycloakAdminClient = KeycloakAdminCli.forMainRealm();
     }
 
     @Test
