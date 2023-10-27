@@ -9,6 +9,12 @@ public class SignInPage extends AbstractPage {
         super(page);
     }
 
+    public SignInPage signInWith(String identityProvider) {
+        page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(identityProvider)).click();
+        page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(identityProvider)).isVisible();
+        return this;
+    }
+
     public SignInPage fillCredentials(String email, String password) {
         page.getByLabel("Email").fill(email);
         page.getByLabel("Password").fill(password);

@@ -23,7 +23,7 @@ public class MailIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        keycloakAdminClient = KeycloakAdminCli.create();
+        keycloakAdminClient = KeycloakAdminCli.forMainRealm();
         mailhogClient = MailhogClient.create();
     }
 

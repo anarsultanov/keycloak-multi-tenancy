@@ -14,35 +14,59 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 public class KeycloakAdminCli {
 
-    private static final String REALM_NAME = "multi-tenant";
+    private static final String MAIN_REALM_NAME = "multi-tenant";
+    private static final String IDP_REALM_NAME = "identity-provider";
     private static final String ADMIN_CLIENT_ID = "admin-cli";
     private static final String ADMIN_CLIENT_SECRET = "74c2b6f6-6109-4c29-b364-7b0943b5e724";
 
     private final Keycloak keycloak;
+    private final String realm;
 
-    private KeycloakAdminCli(Keycloak keycloak) {
+    private KeycloakAdminCli(Keycloak keycloak, String realm) {
         this.keycloak = keycloak;
+        this.realm = realm;
     }
 
-    public static KeycloakAdminCli create() {
+    public static KeycloakAdminCli forMainRealm() {
         var integrationTestContext = IntegrationTestContextHolder.getContext();
         var keycloak = KeycloakBuilder.builder()
                 .resteasyClient(integrationTestContext.httpClient())
                 .serverUrl(integrationTestContext.keycloakUrl())
-                .realm(REALM_NAME)
+                .realm(MAIN_REALM_NAME)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .clientId(ADMIN_CLIENT_ID)
                 .clientSecret(ADMIN_CLIENT_SECRET)
                 .build();
-        return new KeycloakAdminCli(keycloak);
+        return new KeycloakAdminCli(keycloak, MAIN_REALM_NAME);
+    }
+
+    public static KeycloakAdminCli forIdpRealm() {
+        var integrationTestContext = IntegrationTestContextHolder.getContext();
+        var keycloak = KeycloakBuilder.builder()
+                .resteasyClient(integrationTestContext.httpClient())
+                .serverUrl(integrationTestContext.keycloakUrl())
+                .realm(IDP_REALM_NAME)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(ADMIN_CLIENT_ID)
+                .clientSecret(ADMIN_CLIENT_SECRET)
+                .build();
+        return new KeycloakAdminCli(keycloak, IDP_REALM_NAME);
     }
 
     public KeycloakUser createVerifiedUser() {
         return createVerifiedUser(Map.of());
     }
 
+    public KeycloakUser createVerifiedUser(UserData userData) {
+        return createVerifiedUser(userData, Map.of());
+    }
+
     public KeycloakUser createVerifiedUser(Map<String, List<String>> attributes) {
         var userData = UserData.random();
+        return createVerifiedUser(userData, attributes);
+    }
+
+    public KeycloakUser createVerifiedUser(UserData userData, Map<String, List<String>> attributes) {
         var userRepresentation = new UserRepresentation();
         userRepresentation.setFirstName(userData.getFirstName());
         userRepresentation.setLastName(userData.getLastName());
@@ -55,13 +79,13 @@ public class KeycloakAdminCli {
         credentialRepresentation.setValue(userData.getPassword());
         credentialRepresentation.setTemporary(false);
         userRepresentation.setCredentials(List.of(credentialRepresentation));
-        try (var response = keycloak.realm(REALM_NAME).users().create(userRepresentation)) {
+        try (var response = keycloak.realm(realm).users().create(userRepresentation)) {
             var createdId = CreatedResponseUtil.getCreatedId(response);
             return KeycloakUser.from(createdId, userData);
         }
     }
 
     public RealmResource getRealmResource() {
-        return keycloak.realm(REALM_NAME);
+        return keycloak.realm(realm);
     }
 }

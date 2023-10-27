@@ -4,11 +4,11 @@ import com.github.javafaker.Faker;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-class FakerProvider {
+public class FakerProvider {
 
     private static final Faker faker = new Faker();
 
-    static Faker getFaker() {
+    public static Faker getFaker() {
         return faker;
     }
 }

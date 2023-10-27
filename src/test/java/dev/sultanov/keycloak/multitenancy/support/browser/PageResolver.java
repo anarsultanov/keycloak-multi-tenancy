@@ -17,6 +17,8 @@ class PageResolver {
             return new SelectTenantPage(page);
         } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Welcome to Keycloak account management")).isVisible()) {
             return new AccountPage(page);
+        } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("We are sorry...")).isVisible()) {
+            return new ErrorPage(page);
         } else {
             throw new IllegalStateException("Unexpected page");
         }
