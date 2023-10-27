@@ -10,7 +10,7 @@
     <name>Keycloak Multi-Tenancy</name>
 
     <properties>
-        <keycloak.version>22.0.3</keycloak.version>
+        <keycloak.version>22.0.5</keycloak.version>
     </properties>
 
     <dependencies>
