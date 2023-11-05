@@ -9,6 +9,13 @@
 
     <name>Keycloak Multi-Tenancy</name>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
     <properties>
         <keycloak.version>22.0.5</keycloak.version>
     </properties>

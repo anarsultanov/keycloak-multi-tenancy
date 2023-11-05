@@ -15,6 +15,10 @@ Keycloak extension for creating multi-tenant IAM for B2B SaaS applications.
     - [IDP and SSO Integration](#idp-and-sso-integration)
 - [API](#api)
 
+## License
+
+This project is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0). You can find the full text of the license in the [LICENSE](LICENSE) file.
+
 ## Features
 
 - Creation of a tenant during registration (Required action)
