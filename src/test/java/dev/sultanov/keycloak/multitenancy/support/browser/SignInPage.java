@@ -1,5 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.support.browser;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 
@@ -11,8 +13,13 @@ public class SignInPage extends AbstractPage {
 
     public SignInPage signInWith(String identityProvider) {
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(identityProvider)).click();
-        page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(identityProvider)).isVisible();
+        assertThat(page.getByText("IDENTITY-PROVIDER").isVisible()).isTrue();
         return this;
+    }
+
+    public SelectLoginMethodPage tryAnotherWay() {
+        page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Try Another Way")).click();
+        return new SelectLoginMethodPage(page);
     }
 
     public SignInPage fillCredentials(String email, String password) {

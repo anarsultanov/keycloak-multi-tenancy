@@ -1,5 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.support.browser;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.microsoft.playwright.Page;
 
 public abstract class AbstractPage {
@@ -8,5 +10,11 @@ public abstract class AbstractPage {
 
     protected AbstractPage(Page page) {
         this.page = page;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends AbstractPage> T as(Class<T> clazz) {
+        assertThat(this).isInstanceOf(clazz);
+        return ((T) this);
     }
 }

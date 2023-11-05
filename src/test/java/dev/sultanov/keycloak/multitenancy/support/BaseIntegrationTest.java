@@ -42,7 +42,7 @@ public class BaseIntegrationTest {
 
         client = ClientBuilder.newClient();
         playwright = Playwright.create();
-        var browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+        var browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
 
         var keycloakUrl = keycloak.getAuthServerUrl();
         var mailhogUrl = "http://%s:%d/".formatted(mailhog.getHost(), mailhog.getMappedPort(MAILHOG_HTTP_PORT));

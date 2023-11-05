@@ -12,6 +12,8 @@ import dev.sultanov.keycloak.multitenancy.support.browser.CreateTenantPage;
 import dev.sultanov.keycloak.multitenancy.support.browser.ErrorPage;
 import dev.sultanov.keycloak.multitenancy.support.browser.ReviewInvitationsPage;
 import dev.sultanov.keycloak.multitenancy.support.browser.SelectTenantPage;
+import dev.sultanov.keycloak.multitenancy.support.browser.SignInPage;
+import dev.sultanov.keycloak.multitenancy.support.browser.SingleSignOnPage;
 import dev.sultanov.keycloak.multitenancy.support.data.FakerProvider;
 import dev.sultanov.keycloak.multitenancy.support.data.TenantData;
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
@@ -22,8 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
@@ -38,24 +41,17 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
     private KeycloakAdminCli mainRealmClient;
     private KeycloakAdminCli idpRealmClient;
 
-    private String idpAlias;
-
     @BeforeEach
     void setUp() {
         mainRealmClient = KeycloakAdminCli.forMainRealm();
         idpRealmClient = KeycloakAdminCli.forIdpRealm();
     }
 
-    @AfterEach
-    void tearDown() {
-        deleteIdentityProvider(idpAlias);
-    }
-
     @Test
     void shouldRequireToCreateTenant_whenSignInUsingPublicIdpAndNotMemberOfAnyTenants() {
         // given
         var idpUser = idpRealmClient.createVerifiedUser();
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of());
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -69,6 +65,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         nextPage = ((CreateTenantPage) nextPage).fillTenantData(TenantData.random()).submit();
         assertThat(nextPage).isInstanceOf(AccountPage.class);
         assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(idpUser.getUserData().getFullName());
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -76,7 +75,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         // given
         var multiTenantUser = createMultiTenantUser();
         var idpUser = idpRealmClient.createVerifiedUser(multiTenantUser.getKey());
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of());
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -90,6 +89,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrderElementsOf(
                 multiTenantUser.getValue().stream().map(TenantRepresentation::getName).toList()
         );
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -97,7 +99,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         // given
         var multiTenantUser = createMultiTenantUser();
         var idpUser = idpRealmClient.createVerifiedUser(multiTenantUser.getKey());
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of());
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -111,6 +113,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrderElementsOf(
                 multiTenantUser.getValue().stream().map(TenantRepresentation::getName).toList()
         );
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -121,7 +126,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         var idpTenant1 = multiTenantUser.getValue().get(0);
         var idpTenant2 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of(idpTenant1.getId(), idpTenant2.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(idpTenant1.getId(), idpTenant2.getId()), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -135,6 +140,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrderElementsOf(
                 Stream.of(idpTenant1, idpTenant2).map(TenantRepresentation::getName).toList()
         );
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -145,7 +153,8 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         var idpTenant1 = multiTenantUser.getValue().get(0);
         var idpTenant2 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
-        idpAlias = createPostLoginMembershipCreationIdp(Set.of(idpTenant1.getId(), idpTenant2.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITHOUT_MEMBERSHIP_CREATION, POST_LOGIN_MEMBERSHIP_CREATION,
+                Set.of(idpTenant1.getId(), idpTenant2.getId()), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -159,6 +168,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrderElementsOf(
                 Stream.of(idpTenant1, idpTenant2).map(TenantRepresentation::getName).toList()
         );
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -169,7 +181,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         var idpTenant1 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
         var idpTenant2 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
-        idpAlias = createIdpWithoutMembershipCreation(Set.of(idpTenant1.getId(), idpTenant2.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITHOUT_MEMBERSHIP_CREATION, null, Set.of(idpTenant1.getId(), idpTenant2.getId()), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -180,6 +192,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         // then
         assertThat(nextPage).isInstanceOf(ErrorPage.class);
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -190,7 +205,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         var idpTenant1 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
         var idpTenant2 = mainRealmClient.createVerifiedUser().createTenant().toRepresentation();
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of(idpTenant1.getId(), idpTenant2.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(idpTenant1.getId(), idpTenant2.getId()), false);
 
         AccountPage.open()
                 .signIn()
@@ -209,6 +224,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrderElementsOf(
                 Stream.concat(multiTenantUser.getValue().stream(), Stream.of(idpTenant1, idpTenant2)).map(TenantRepresentation::getName).toList()
         );
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -219,7 +237,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         var idpTenant1 = multiTenantUser.getValue().get(1);
         var idpTenant2 = multiTenantUser.getValue().get(2);
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of(idpTenant1.getId(), idpTenant2.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(idpTenant1.getId(), idpTenant2.getId()), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -231,6 +249,9 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         // then
         assertThat(nextPage).isInstanceOf(SelectTenantPage.class);
         assertThat(((SelectTenantPage) nextPage).availableOptions()).containsExactlyInAnyOrder(idpTenant1.getName(), idpTenant2.getName());
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     @Test
@@ -240,7 +261,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         var idpUser = idpRealmClient.createVerifiedUser(multiTenantUser.getKey());
 
         var idpTenant = multiTenantUser.getValue().get(0);
-        idpAlias = createFirstLoginMembershipCreationIdp(Set.of(idpTenant.getId()));
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(idpTenant.getId()), false);
 
         // when
         var nextPage = AccountPage.open()
@@ -251,6 +272,52 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
 
         // then
         assertThat(nextPage).isInstanceOf(AccountPage.class);
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
+    }
+
+    @Test
+    void shouldSeeError_whenIdentityProviderIsNotFoundByAlias() {
+        // when
+        var nextPage = AccountPage.open()
+                .signIn()
+                .tryAnotherWay()
+                .selectSingleSignOn()
+                .fillAlias(UUID.randomUUID().toString())
+                .proceed();
+
+        // then
+        assertThat(nextPage).isInstanceOf(SingleSignOnPage.class)
+                .asInstanceOf(InstanceOfAssertFactories.type(SingleSignOnPage.class))
+                .extracting(SingleSignOnPage::hasError)
+                .isEqualTo(true);
+    }
+
+    @Test
+    void shouldSignInUsingSsoPage_whenIdentityProviderIsHidden() {
+        // given
+        var multiTenantUser = createMultiTenantUser();
+        var idpUser = idpRealmClient.createVerifiedUser(multiTenantUser.getKey());
+        var idpTenant = multiTenantUser.getValue().get(0);
+        var idpAlias = createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, Set.of(idpTenant.getId()), true);
+
+        // when
+        var nextPage = AccountPage.open()
+                .signIn()
+                .tryAnotherWay()
+                .selectSingleSignOn()
+                .fillAlias(idpAlias)
+                .proceed()
+                .as(SignInPage.class)
+                .fillCredentials(idpUser.getUserData().getEmail(), idpUser.getUserData().getPassword())
+                .signIn();
+
+        // then
+        assertThat(nextPage).isInstanceOf(AccountPage.class);
+
+        // cleanup
+        deleteIdentityProvider(idpAlias);
     }
 
     private Map.Entry<UserData, List<TenantRepresentation>> createMultiTenantUser() {
@@ -277,19 +344,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         return new AbstractMap.SimpleImmutableEntry<>(user.getUserData(), tenants);
     }
 
-    private String createFirstLoginMembershipCreationIdp(Set<String> tenantIds) {
-        return createIdentityProvider(FIRST_LOGIN_FLOW_WITH_MEMBERSHIP_CREATION, null, tenantIds);
-    }
-
-    private String createPostLoginMembershipCreationIdp(Set<String> tenantIds) {
-        return createIdentityProvider(FIRST_LOGIN_FLOW_WITHOUT_MEMBERSHIP_CREATION, POST_LOGIN_MEMBERSHIP_CREATION, tenantIds);
-    }
-
-    private String createIdpWithoutMembershipCreation(Set<String> tenantIds) {
-        return createIdentityProvider(FIRST_LOGIN_FLOW_WITHOUT_MEMBERSHIP_CREATION, null, tenantIds);
-    }
-
-    private String createIdentityProvider(String firstLoginFlow, @Nullable String postLoginFlow, Set<String> tenantIds) {
+    private String createIdentityProvider(String firstLoginFlow, @Nullable String postLoginFlow, Set<String> tenantIds, boolean hideOnLoginPage) {
         var idpAlias = FakerProvider.getFaker().internet().domainWord();
 
         var provider = new IdentityProviderRepresentation();
@@ -309,6 +364,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         config.put("jwksUrl", "http://0.0.0.0:8080/realms/identity-provider/protocol/openid-connect/certs");
         config.put("useJwksUrl", "true");
         config.put("multi-tenancy.tenants", String.join(",", tenantIds));
+        config.put("hideOnLoginPage", String.valueOf(hideOnLoginPage));
         provider.setConfig(config);
 
         try (var response = mainRealmClient.getRealmResource().identityProviders().create(provider)) {

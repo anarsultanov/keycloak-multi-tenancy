@@ -1,1 +1,2 @@
 dev.sultanov.keycloak.multitenancy.authentication.authenticators.IdpTenantMembershipsCreatingAuthenticatorFactory
+dev.sultanov.keycloak.multitenancy.authentication.authenticators.LoginWithSsoAuthenticatorFactory

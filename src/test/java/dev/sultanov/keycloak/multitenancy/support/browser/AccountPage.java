@@ -1,9 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.support.browser;
 
-import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
-import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContext;
 import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContextHolder;
 import java.util.Optional;
 
