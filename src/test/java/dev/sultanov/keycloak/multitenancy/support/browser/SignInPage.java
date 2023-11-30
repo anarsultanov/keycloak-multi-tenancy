@@ -3,6 +3,7 @@ package dev.sultanov.keycloak.multitenancy.support.browser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Page.GetByLabelOptions;
 import com.microsoft.playwright.options.AriaRole;
 
 public class SignInPage extends AbstractPage {
@@ -24,7 +25,7 @@ public class SignInPage extends AbstractPage {
 
     public SignInPage fillCredentials(String email, String password) {
         page.getByLabel("Email").fill(email);
-        page.getByLabel("Password").fill(password);
+        page.getByLabel("Password", new GetByLabelOptions().setExact(true)).fill(password);
         return this;
     }
 

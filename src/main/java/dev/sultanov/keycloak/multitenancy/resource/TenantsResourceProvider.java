@@ -1,8 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.services.resource.RealmResourceProvider;
 
 public class TenantsResourceProvider implements RealmResourceProvider {
@@ -15,11 +13,7 @@ public class TenantsResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        RealmModel realm = session.getContext().getRealm();
-        TenantsResource resource = new TenantsResource(realm);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        resource.setup();
-        return resource;
+        return new TenantsResource(session);
     }
 
     @Override

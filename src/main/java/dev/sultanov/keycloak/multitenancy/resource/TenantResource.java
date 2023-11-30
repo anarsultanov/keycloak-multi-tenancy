@@ -8,16 +8,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 
 public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     private final TenantModel tenant;
 
-    public TenantResource(RealmModel realm, TenantModel tenant) {
-        super(realm);
+    public TenantResource(KeycloakSession session, TenantModel tenant) {
+        super(session);
         this.tenant = tenant;
     }
 
@@ -40,17 +39,11 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     @Path("invitations")
     public TenantInvitationsResource invitations() {
-        TenantInvitationsResource resource = new TenantInvitationsResource(realm, tenant);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        resource.setup();
-        return resource;
+        return new TenantInvitationsResource(session, tenant);
     }
 
     @Path("memberships")
     public TenantMembershipsResource memberships() {
-        TenantMembershipsResource resource = new TenantMembershipsResource(realm, tenant);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        resource.setup();
-        return resource;
+        return new TenantMembershipsResource(session, tenant);
     }
 }

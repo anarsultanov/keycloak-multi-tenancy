@@ -22,15 +22,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
-    public TenantsResource(RealmModel realm) {
-        super(realm);
+    public TenantsResource(KeycloakSession session) {
+        super(session);
     }
 
     @POST
@@ -77,10 +76,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         if (!auth.isTenantAdmin(model)) {
             throw new NotAuthorizedException(String.format("Insufficient permission to access %s", tenantId));
         } else {
-            TenantResource resource = new TenantResource(realm, model);
-            ResteasyProviderFactory.getInstance().injectProperties(resource);
-            resource.setup();
-            return resource;
+            return new TenantResource(session, model);
         }
     }
 }

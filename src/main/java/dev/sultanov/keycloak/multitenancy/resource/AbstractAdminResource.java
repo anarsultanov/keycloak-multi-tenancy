@@ -4,14 +4,11 @@ import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import org.keycloak.Config;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -29,13 +26,6 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 public abstract class AbstractAdminResource<T extends AdminAuth> {
 
-    @Context
-    protected ClientConnection clientConnection;
-
-    @Context
-    private HttpHeaders headers;
-
-    @Context
     protected KeycloakSession session;
 
     protected final RealmModel realm;
@@ -47,18 +37,20 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
     protected TenantProvider tenantProvider;
 
 
-    public AbstractAdminResource(RealmModel realm) {
-        this.realm = realm;
+    public AbstractAdminResource(KeycloakSession session) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
+        setup();
     }
 
-    public void setup() {
+    private void setup() {
         setupAuth();
         setupEvents();
         setupProvider();
     }
 
     private void setupAuth() {
-        String tokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);
+        var tokenString = AppAuthManager.extractAuthorizationHeaderToken(session.getContext().getRequestHeaders());
 
         if (tokenString == null) {
             throw new NotAuthorizedException("Bearer");
@@ -73,9 +65,9 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
             throw new NotAuthorizedException("Bearer token format error");
         }
 
-        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealmByName(realmName);
+        var realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        var realmManager = new RealmManager(session);
+        var realm = realmManager.getRealmByName(realmName);
 
         if (realm == null) {
             throw new NotAuthorizedException("Unknown realm in token");
@@ -84,8 +76,8 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
         var bearerTokenAuthenticator = new BearerTokenAuthenticator(session);
         bearerTokenAuthenticator.setRealm(realm);
         bearerTokenAuthenticator.setUriInfo(session.getContext().getUri());
-        bearerTokenAuthenticator.setConnection(clientConnection);
-        bearerTokenAuthenticator.setHeaders(headers);
+        bearerTokenAuthenticator.setConnection(session.getContext().getConnection());
+        bearerTokenAuthenticator.setHeaders(session.getContext().getRequestHeaders());
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");

@@ -24,14 +24,14 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 
 public class TenantMembershipsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     private final TenantModel tenant;
 
-    public TenantMembershipsResource(RealmModel realm, TenantModel tenant) {
-        super(realm);
+    public TenantMembershipsResource(KeycloakSession session, TenantModel tenant) {
+        super(session);
         this.tenant = tenant;
     }
 
