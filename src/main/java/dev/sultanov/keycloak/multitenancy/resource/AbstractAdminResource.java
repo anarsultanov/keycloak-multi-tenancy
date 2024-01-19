@@ -10,6 +10,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -21,6 +23,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
@@ -47,6 +50,18 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
         setupAuth();
         setupEvents();
         setupProvider();
+        setupCors();
+    }
+
+    private void setupCors() {
+        HttpRequest request = session.getContext().getHttpRequest();
+        HttpResponse response = session.getContext().getHttpResponse();
+        Cors.add(request)
+                .allowedOrigins(auth.getToken())
+                .allowedMethods(CorsResource.METHODS)
+                .exposedHeaders("Location")
+                .auth()
+                .build(response);
     }
 
     private void setupAuth() {

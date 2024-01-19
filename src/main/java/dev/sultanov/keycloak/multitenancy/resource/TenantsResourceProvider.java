@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 
@@ -13,7 +14,12 @@ public class TenantsResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        return new TenantsResource(session);
+        HttpRequest request = session.getContext().getHttpRequest();
+        if (request != null && "OPTIONS".equals(request.getHttpMethod())) {
+            return new CorsResource(request);
+        } else {
+            return new TenantsResource(session);
+        }
     }
 
     @Override
