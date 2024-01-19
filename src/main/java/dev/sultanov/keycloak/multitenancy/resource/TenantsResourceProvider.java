@@ -12,12 +12,11 @@ public class TenantsResourceProvider implements RealmResourceProvider {
         this.session = session;
     }
 
-
     @Override
     public Object getResource() {
         HttpRequest request = session.getContext().getHttpRequest();
         if (request != null && "OPTIONS".equals(request.getHttpMethod())) {
-            return new CorsResource(session, request);
+            return new CorsResource(request);
         } else {
             return new TenantsResource(session);
         }
