@@ -43,8 +43,8 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
 
     private final TenantModel tenant;
 
-    public TenantInvitationsResource(KeycloakSession session, TenantModel tenant) {
-        super(session);
+    public TenantInvitationsResource(AbstractAdminResource<TenantAdminAuth> parent, TenantModel tenant) {
+        super(parent);
         this.tenant = tenant;
     }
 
