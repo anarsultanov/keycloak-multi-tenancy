@@ -17,8 +17,7 @@ Keycloak extension for creating multi-tenant IAM for B2B SaaS applications.
 
 ## License
 
-This project is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0). You can find the full text of the license in
-the [LICENSE](LICENSE) file.
+This project is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0). You can find the full text of the license in the [LICENSE](LICENSE) file.
 
 ## Features
 
@@ -89,43 +88,33 @@ In the same way, you can set up `All tenants` mapper that will add to the token 
 
 ### IDP and SSO Integration
 
-In a multi-tenant application, it's often necessary for tenants to use their own Identity Provider (IDP).
+In a multi-tenant application, it's often necessary for tenants to use their own Identity Provider (IDP). 
 While Keycloak supports identity brokering, it may not be fully compatible with the multi-tenant model introduced by this extension.
 
-One of the issues arises from the lack of a connection between tenants and their respective IDPs.
-This prevents the onboarding of users during their initial login using the IDP, since if users haven't been pre-created and added to the required tenant,
-the created users will be tenantless and asked to create a new tenant.
-To address this issue, this extension introduces the concept of `tenant-specific IDPs` and an additional authenticator that facilitates the creation of required
-memberships.
+One of the issues arises from the lack of a connection between tenants and their respective IDPs. 
+This prevents the onboarding of users during their initial login using the IDP, since if users haven't been pre-created and added to the required tenant, 
+the created users will be tenantless and asked to create a new tenant. 
+To address this issue, this extension introduces the concept of `tenant-specific IDPs` and an additional authenticator that facilitates the creation of required memberships.
 
-To configure an IDP as tenant-specific, tenants' IDs should be added to the `multi-tenancy.tenants` configuration attribute of the IDP as a **comma-separated
-list**.
+To configure an IDP as tenant-specific, tenants' IDs should be added to the `multi-tenancy.tenants` configuration attribute of the IDP as a **comma-separated list**. 
 This can be achieved using the standard [Keycloak REST API](https://www.keycloak.org/docs-api/23.0.1/rest-api/index.html#_identity_providers).
 
 > **_Note_**
-> - _With tenant-specific IDP configuration, the IDP limits access to only the tenants listed in the configuration.
-    > If a user logs in with the IDP but isn't a member of any of these specified tenants, and automatic membership creation isn't configured, an error will
-    occur._
-> - _IDPs that lack the `multi-tenancy.tenants` configuration attribute are considered public.
-    > These public IDPs grant access to any tenants for users who are members of those tenants. This ensures compatibility with existing setups and doesn't
-    disrupt previous configurations._
+> - _With tenant-specific IDP configuration, the IDP limits access to only the tenants listed in the configuration. 
+> If a user logs in with the IDP but isn't a member of any of these specified tenants, and automatic membership creation isn't configured, an error will occur._
+> - _IDPs that lack the `multi-tenancy.tenants` configuration attribute are considered public. 
+> These public IDPs grant access to any tenants for users who are members of those tenants. This ensures compatibility with existing setups and doesn't disrupt previous configurations._
 
-To automatically add users as members of all the configured tenants during their initial login, the `Create tenant membership` authenticator should be added to
-the IDP's `first login flow`.
-Alternatively, this authenticator can be added to the `post-login flow`, allowing memberships to be created even for tenants added to the IDP after the user has
-already been onboarded.
+To automatically add users as members of all the configured tenants during their initial login, the `Create tenant membership` authenticator should be added to the IDP's `first login flow`. 
+Alternatively, this authenticator can be added to the `post-login flow`, allowing memberships to be created even for tenants added to the IDP after the user has already been onboarded.
 Any memberships created by this authenticator will automatically have the default `tenant-user` role assigned to them.
 
 In order to enhance privacy and avoid listing all tenant-specific IDPs on the login page, a custom `Login with SSO` authenticator has been introduced.
 It can be added as an alternative to the password and other authentication methods in the `browser flow`.
-This will either include a `Try Another Way` link on the login page or, if it already exists, add an additional `Single Sign-on (SSO)` option to the available
-login methods.
-If the user selects `Single Sign-on (SSO)`, they will be prompted to enter an IDP alias and then redirected to the corresponding IDP login page if a match is
-found.
+This will either include a `Try Another Way` link on the login page or, if it already exists, add an additional `Single Sign-on (SSO)` option to the available login methods.
+If the user selects `Single Sign-on (SSO)`, they will be prompted to enter an IDP alias and then redirected to the corresponding IDP login page if a match is found.
 
-If you'd like to include a direct link to `Single Sign-On (SSO)` on the login page, you can achieve this by modifying the login page template and adding the
-following code:
-
+If you'd like to include a direct link to `Single Sign-On (SSO)` on the login page, you can achieve this by modifying the login page template and adding the following code:
 ```html
 
 <script type="text/javascript">
