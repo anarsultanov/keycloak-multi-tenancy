@@ -5,7 +5,6 @@ import com.microsoft.playwright.Playwright;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
-import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
@@ -56,27 +55,5 @@ public class BaseIntegrationTest {
         client.close();
         playwright.close();
         IntegrationTestContextHolder.clearContext();
-    }
-
-    protected void withCustomKeycloak(Map<String, String> envVars, Runnable runnable) {
-        var currentContext = IntegrationTestContextHolder.getContext();
-        var customKeycloak = new KeycloakContainer(keycloak.getDockerImageName())
-                .withNetwork(keycloak.getNetwork())
-                .withAccessToHost(true)
-                .withRealmImportFiles("/realm-export.json", "/idp-realm-export.json")
-                .withProviderClassesFrom("target/classes")
-                .withNetworkAliases("keycloak-custom")
-                .withEnv(envVars);
-
-        try {
-            customKeycloak.start();
-            var updatedContext = new IntegrationTestContext(currentContext.httpClient(), currentContext.browser(), customKeycloak.getAuthServerUrl(),
-                    currentContext.mailhogUrl());
-            IntegrationTestContextHolder.setContext(updatedContext);
-            runnable.run();
-        } finally {
-            keycloak.stop();
-            IntegrationTestContextHolder.setContext(currentContext);
-        }
     }
 }
