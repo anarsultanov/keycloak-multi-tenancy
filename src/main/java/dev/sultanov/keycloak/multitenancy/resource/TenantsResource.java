@@ -2,6 +2,7 @@ package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
+import dev.sultanov.keycloak.multitenancy.util.Environment;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -25,6 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RoleModel;
 
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
@@ -38,6 +40,11 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @Operation(operationId = "createTenant", summary = "Create a tenant")
     @APIResponse(responseCode = "201", description = "Created")
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
+
+        var requiredRole = Environment.getVariable("TENANT_CREATION_ROLE");
+        if (requiredRole.isPresent() && !auth.hasAppRole(auth.getClient(), requiredRole.get())) {
+            throw new NotAuthorizedException(String.format("Missing required role for tenant creation: %s", requiredRole.get()));
+        }
 
         TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
         TenantRepresentation representation = ModelMapper.toRepresentation(model);

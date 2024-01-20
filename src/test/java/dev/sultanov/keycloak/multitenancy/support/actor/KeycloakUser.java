@@ -32,6 +32,10 @@ public class KeycloakUser {
         return new KeycloakUser(userId, userData);
     }
 
+    public String getClientId() {
+        return CLIENT_ID;
+    }
+
     public String getUserId() {
         return userId;
     }
@@ -65,7 +69,7 @@ public class KeycloakUser {
                 .orElseThrow();
     }
 
-    private TenantsResource tenantsResource() {
+    public TenantsResource tenantsResource() {
         return createClient().proxy(TenantsResource.class, URI.create(IntegrationTestContextHolder.getContext().keycloakUrl() + "/realms/" + REALM_NAME));
     }
 

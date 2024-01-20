@@ -2,14 +2,17 @@ package dev.sultanov.keycloak.multitenancy.support.actor;
 
 import dev.sultanov.keycloak.multitenancy.support.IntegrationTestContextHolder;
 import dev.sultanov.keycloak.multitenancy.support.data.UserData;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 public class KeycloakAdminCli {
@@ -83,6 +86,32 @@ public class KeycloakAdminCli {
             var createdId = CreatedResponseUtil.getCreatedId(response);
             return KeycloakUser.from(createdId, userData);
         }
+    }
+
+    public void assignClientRoleToUser(String clientId, String role, String userId) {
+        var userResource = keycloak.realm(realm).users().get(userId);
+
+        var clientRepresentation = keycloak.realm(realm).clients().findAll()
+                .stream()
+                .filter(client -> client.getClientId().equals(clientId))
+                .findFirst()
+                .orElseThrow();
+        var clientResource = keycloak.realm(realm).clients().get(clientRepresentation.getId());
+
+        var roleRepresentation = clientResource.roles().list()
+                .stream()
+                .filter(element -> element.getName().equals(role))
+                .findFirst()
+                .orElseGet(() -> createRole(clientResource, role));
+
+        userResource.roles().clientLevel(clientRepresentation.getId()).add(Collections.singletonList(roleRepresentation));
+    }
+
+    private RoleRepresentation createRole(ClientResource clientResource, String roleName) {
+        var roleRepresentation = new RoleRepresentation();
+        roleRepresentation.setName(roleName);
+        clientResource.roles().create(roleRepresentation);
+        return clientResource.roles().get(roleName).toRepresentation();
     }
 
     public RealmResource getRealmResource() {
