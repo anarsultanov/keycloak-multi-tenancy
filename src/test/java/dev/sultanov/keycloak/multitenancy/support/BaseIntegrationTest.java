@@ -18,7 +18,7 @@ public class BaseIntegrationTest {
     private static final Integer MAILHOG_HTTP_PORT = 8025;
 
     private static final Network network = Network.newNetwork();
-    protected static final KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:23.0.1")
+    private static final KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:23.0.1")
             .withRealmImportFiles("/realm-export.json", "/idp-realm-export.json")
             .withProviderClassesFrom("target/classes")
             .withNetwork(network)
