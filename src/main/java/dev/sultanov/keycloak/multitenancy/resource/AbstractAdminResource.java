@@ -43,10 +43,9 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
     public AbstractAdminResource(KeycloakSession session) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        setup();
     }
 
-    private void setup() {
+    public final void setup() {
         setupAuth();
         setupEvents();
         setupProvider();
