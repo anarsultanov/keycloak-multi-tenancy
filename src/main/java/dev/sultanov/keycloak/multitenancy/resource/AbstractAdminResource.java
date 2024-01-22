@@ -52,6 +52,8 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
         this.auth = parent.auth;
         this.adminEvent = parent.adminEvent;
         this.user = parent.user;
+        this.entityManager = parent.entityManager;
+        this.tenantProvider = parent.tenantProvider;
     }
 
     private void setup() {
