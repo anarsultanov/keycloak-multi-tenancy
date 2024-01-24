@@ -1,0 +1,6 @@
+{
+    "extends": [
+        "config:recommended",
+        "group:allNonMajor"
+    ]
+}
