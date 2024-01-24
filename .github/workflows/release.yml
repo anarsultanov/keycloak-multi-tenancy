@@ -51,7 +51,7 @@ jobs:
         run: mkdir staging && cp target/*.jar staging
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Package
           path: staging
