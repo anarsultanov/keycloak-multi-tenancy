@@ -64,6 +64,7 @@ Now go to `Realm Settings` > `Login` and turn on `Verify email` as only users wi
 
 Each new user will be prompted to review pending invitations, if any, and/or create a new tenant if there is no invitation, or they do not accept any of them.
 If they accept the invitation, they can still create another tenant later using the [API](#api).
+Note that tenant creation through the API can be restricted to users with a specified client role by setting the `requiredRoleForTenantCreation` realm attribute.
 Users who is a member of more than one tenant will be prompted to select an active tenant when they log in.
 
 ### Token Claims

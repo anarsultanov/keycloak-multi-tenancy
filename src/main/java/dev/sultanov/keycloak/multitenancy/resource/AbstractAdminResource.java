@@ -3,12 +3,10 @@ package dev.sultanov.keycloak.multitenancy.resource;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.NotFoundException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -22,6 +20,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -98,23 +97,15 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
             throw new NotAuthorizedException("Unknown realm in token");
         }
         session.getContext().setRealm(realm);
-        var bearerTokenAuthenticator = new BearerTokenAuthenticator(session);
-        bearerTokenAuthenticator.setRealm(realm);
-        bearerTokenAuthenticator.setUriInfo(session.getContext().getUri());
-        bearerTokenAuthenticator.setConnection(session.getContext().getConnection());
-        bearerTokenAuthenticator.setHeaders(session.getContext().getRequestHeaders());
-        AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
+
+        var authResult = new BearerTokenAuthenticator(session)
+                .setRealm(realm)
+                .setUriInfo(session.getContext().getUri())
+                .setConnection(session.getContext().getConnection())
+                .setHeaders(session.getContext().getRequestHeaders())
+                .authenticate();
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");
-        }
-
-        ClientModel client
-                = realm.getName().equals(Config.getAdminRealm())
-                ? this.realm.getMasterAdminClient()
-                : this.realm.getClientByClientId(realmManager.getRealmAdminClientId(this.realm));
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client for authorization");
         }
 
         user = authResult.getUser();
@@ -122,7 +113,7 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
         try {
             Class<T> clazz = findSupportedType();
             Constructor<T> constructor = clazz.getConstructor(RealmModel.class, AccessToken.class, UserModel.class, ClientModel.class);
-            auth = constructor.newInstance(realm, token, user, client);
+            auth = constructor.newInstance(realm, token, user, authResult.getClient());
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

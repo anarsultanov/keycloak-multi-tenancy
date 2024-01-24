@@ -39,6 +39,11 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @APIResponse(responseCode = "201", description = "Created")
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
 
+        var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
+        if (requiredRole != null && !auth.hasAppRole(auth.getClient(), requiredRole)) {
+            throw new NotAuthorizedException(String.format("Missing required role for tenant creation: %s", requiredRole));
+        }
+
         TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
         TenantRepresentation representation = ModelMapper.toRepresentation(model);
 
