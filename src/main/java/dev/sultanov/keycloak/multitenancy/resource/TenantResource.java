@@ -15,8 +15,8 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     private final TenantModel tenant;
 
-    public TenantResource(KeycloakSession session, TenantModel tenant) {
-        super(session);
+    public TenantResource(AbstractAdminResource<TenantAdminAuth> parent, TenantModel tenant) {
+        super(parent);
         this.tenant = tenant;
     }
 
@@ -39,11 +39,11 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     @Path("invitations")
     public TenantInvitationsResource invitations() {
-        return new TenantInvitationsResource(session, tenant);
+        return new TenantInvitationsResource(this, tenant);
     }
 
     @Path("memberships")
     public TenantMembershipsResource memberships() {
-        return new TenantMembershipsResource(session, tenant);
+        return new TenantMembershipsResource(this, tenant);
     }
 }

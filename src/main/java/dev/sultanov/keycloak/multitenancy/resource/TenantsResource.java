@@ -76,7 +76,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         if (!auth.isTenantAdmin(model)) {
             throw new NotAuthorizedException(String.format("Insufficient permission to access %s", tenantId));
         } else {
-            return new TenantResource(session, model);
+            return new TenantResource(this, model);
         }
     }
 }
