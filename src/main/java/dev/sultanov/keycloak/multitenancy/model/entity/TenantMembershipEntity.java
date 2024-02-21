@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -19,8 +20,12 @@ import org.keycloak.models.jpa.entities.UserEntity;
 
 @Table(name = "TENANT_MEMBERSHIP", uniqueConstraints = {@UniqueConstraint(columnNames = {"TENANT_ID", "USER_ID"})})
 @Entity
-@NamedQuery(name = "getMembershipsByRealmAndUserId",
-        query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.realmId = :realmId AND m.user.id = :userId")
+@NamedQueries({
+        @NamedQuery(name = "getMembershipsByRealmIdAndUserId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.realmId = :realmId AND m.user.id = :userId"),
+        @NamedQuery(name = "getMembershipsByTenantId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId"),
+        @NamedQuery(name = "getMembershipsByTenantIdAndUserId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId AND m.user.id = :userId"),
+        @NamedQuery(name = "getMembershipsByTenantIdAndUserEmail", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId AND m.user.email = :email")
+})
 public class TenantMembershipEntity {
 
     @Id

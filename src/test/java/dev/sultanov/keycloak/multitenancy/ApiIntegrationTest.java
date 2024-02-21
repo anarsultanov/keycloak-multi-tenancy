@@ -44,7 +44,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
         assertThat(nextPage).isInstanceOf(ReviewInvitationsPage.class);
         ((ReviewInvitationsPage) nextPage).accept();
 
-        var userMembership = tenantResource.memberships().listMemberships("", null, null).stream()
+        var userMembership = tenantResource.memberships().listMemberships(user.getUserData().getEmail(), null, null).stream()
                 .filter(membership -> membership.getUser().getEmail().equalsIgnoreCase(user.getUserData().getEmail()))
                 .findFirst()
                 .orElseThrow();
@@ -54,7 +54,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
 
             // then
             assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_NO_CONTENT);
-            assertThat(tenantResource.memberships().listMemberships("", null, null))
+            assertThat(tenantResource.memberships().listMemberships(null, null, null))
                     .extracting(TenantMembershipRepresentation::getUser)
                     .extracting(UserRepresentation::getEmail)
                     .extracting(String::toLowerCase)

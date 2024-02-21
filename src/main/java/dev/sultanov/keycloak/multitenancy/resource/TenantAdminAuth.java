@@ -1,7 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
-import dev.sultanov.keycloak.multitenancy.util.Constants;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.util.Constants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -15,10 +15,10 @@ public class TenantAdminAuth extends AdminAuth {
     }
 
     boolean isTenantAdmin(TenantModel tenantModel) {
-        return tenantModel.getMembership(getUser()).filter(membership -> membership.getRoles().contains(Constants.TENANT_ADMIN_ROLE)).isPresent();
+        return tenantModel.getMembershipByUser(getUser()).filter(membership -> membership.getRoles().contains(Constants.TENANT_ADMIN_ROLE)).isPresent();
     }
 
     boolean isTenantMember(TenantModel tenantModel) {
-        return tenantModel.getMembership(getUser()).isPresent();
+        return tenantModel.getMembershipByUser(getUser()).isPresent();
     }
 }

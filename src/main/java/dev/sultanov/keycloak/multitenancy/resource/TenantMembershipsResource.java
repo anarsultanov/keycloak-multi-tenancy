@@ -13,7 +13,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.Optional;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -24,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.StringUtil;
 
 public class TenantMembershipsResource extends AbstractAdminResource<TenantAdminAuth> {
 
@@ -40,17 +41,21 @@ public class TenantMembershipsResource extends AbstractAdminResource<TenantAdmin
     @Operation(operationId = "listMemberships", summary = "List tenant memberships")
     @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantMembershipRepresentation.class)))
     public Stream<TenantMembershipRepresentation> listMemberships(
-            @Parameter(description = "Member email") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Member email") @QueryParam("search") String search,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
             @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
-        Optional<String> search = Optional.ofNullable(searchQuery);
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        return tenant.getMembershipsStream()
-                .filter(m -> search.isEmpty() || m.getUser().getEmail().contains(search.get()))
-                .skip(firstResult)
-                .limit(maxResults)
-                .map(ModelMapper::toRepresentation);
+
+        if (StringUtil.isNotBlank(search)) {
+            search = URLDecoder.decode(search, Charset.defaultCharset()).trim().toLowerCase();
+            return tenant.getMembershipsStream(search, firstResult, maxResults)
+                    .map(ModelMapper::toRepresentation);
+        } else {
+            return tenant.getMembershipsStream(firstResult, maxResults)
+                    .map(ModelMapper::toRepresentation);
+        }
     }
 
     @PATCH

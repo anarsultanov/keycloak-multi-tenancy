@@ -3,7 +3,6 @@ package dev.sultanov.keycloak.multitenancy.authentication.authenticators;
 import dev.sultanov.keycloak.multitenancy.authentication.IdentityProviderTenantsConfig;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.Optional;
 import java.util.Set;
@@ -59,7 +58,7 @@ public class IdpTenantMembershipsCreatingAuthenticator implements Authenticator 
                 if (tenantById.isEmpty()) {
                     log.warn("Tenant with ID %s, configured in IDP with alias %s, does not exist. Skipping membership creation."
                             .formatted(tenantId, brokerContext.getIdpConfig().getAlias()));
-                } else if (tenantById.get().getMembership(user).isPresent()) {
+                } else if (tenantById.get().getMembershipByUser(user).isPresent()) {
                     log.debug("User is already a member of tenant with ID %s. Skipping membership creation.".formatted(tenantId));
                 } else {
                     tenantById.get().grantMembership(user, Set.of(Constants.TENANT_USER_ROLE));
