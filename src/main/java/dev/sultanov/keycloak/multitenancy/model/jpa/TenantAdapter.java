@@ -7,13 +7,16 @@ import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.jpa.PaginationUtils;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -47,32 +50,64 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
     }
 
     @Override
-    public TenantMembershipAdapter grantMembership(UserModel user, Set<String> roles) {
+    public TenantMembershipModel grantMembership(UserModel user, Set<String> roles) {
         TenantMembershipEntity entity = new TenantMembershipEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setUser(em.getReference(UserEntity.class, user.getId()));
         entity.setTenant(tenant);
         entity.setRoles(new HashSet<>(roles));
         em.persist(entity);
+        em.flush();
         tenant.getMemberships().add(entity);
         return new TenantMembershipAdapter(session, realm, em, entity);
     }
 
     @Override
-    public Stream<TenantMembershipModel> getMembershipsStream() {
-        return tenant.getMemberships().stream()
-                .map(membership -> new TenantMembershipAdapter(session, realm, em, membership));
+    public Stream<TenantMembershipModel> getMembershipsStream(Integer first, Integer max) {
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByTenantId", TenantMembershipEntity.class);
+        query.setParameter("tenantId", tenant.getId());
+        return PaginationUtils.paginateQuery(query, first, max).getResultStream()
+                .map((membership) -> new TenantMembershipAdapter(session, realm, em, membership));
+    }
+
+    @Override
+    public Stream<TenantMembershipModel> getMembershipsStream(String email, Integer first, Integer max) {
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByTenantIdAndUserEmail", TenantMembershipEntity.class);
+        query.setParameter("tenantId", tenant.getId());
+        query.setParameter("email", email);
+        return PaginationUtils.paginateQuery(query, first, max).getResultStream()
+                .map((membership) -> new TenantMembershipAdapter(session, realm, em, membership));
+    }
+
+    @Override
+    public Optional<TenantMembershipModel> getMembershipById(String membershipId) {
+        TenantMembershipEntity membership = em.find(TenantMembershipEntity.class, membershipId);
+        if (membership != null && realm.getId().equals(membership.getTenant().getRealmId())) {
+            return Optional.of(new TenantMembershipAdapter(session, realm, em, membership));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<TenantMembershipModel> getMembershipByUser(UserModel user) {
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByTenantIdAndUserId", TenantMembershipEntity.class);
+        query.setParameter("tenantId", tenant.getId());
+        query.setParameter("userId", user.getId());
+        return query.getResultStream().map(m -> (TenantMembershipModel) new TenantMembershipAdapter(session, realm, em, m)).findFirst();
     }
 
     @Override
     public boolean revokeMembership(String membershipId) {
-        var optionalMembership = getMembershipById(membershipId);
-        if (optionalMembership.isPresent()) {
-            var membershipEmail = optionalMembership.get().getUser().getEmail();
-            tenant.getMemberships().removeIf(entity -> entity.getId().equals(membershipId));
+        var membershipEntity = em.find(TenantMembershipEntity.class, membershipId);
+        if (membershipEntity != null) {
+            var membershipEmail = membershipEntity.getUser().getEmail();
+
             if (membershipEmail != null) {
                 revokeInvitations(membershipEmail);
             }
+            em.remove(membershipEntity);
+            em.flush();
             return true;
         }
         return false;
@@ -87,6 +122,7 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
         entity.setInvitedBy(inviter.getId());
         entity.setRoles(new HashSet<>(roles));
         em.persist(entity);
+        em.flush();
         tenant.getInvitations().add(entity);
         return new TenantInvitationAdapter(session, realm, em, entity);
     }

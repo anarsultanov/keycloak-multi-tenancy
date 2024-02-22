@@ -20,18 +20,16 @@ public interface TenantModel {
 
     TenantMembershipModel grantMembership(UserModel user, Set<String> roles);
 
-    Stream<TenantMembershipModel> getMembershipsStream();
+    Stream<TenantMembershipModel> getMembershipsStream(Integer firstResult, Integer maxResults);
 
-    default Optional<TenantMembershipModel> getMembershipById(String membershipId) {
-        return getMembershipsStream().filter(membership -> membership.getId().equals(membershipId)).findFirst();
-    };
+    Stream<TenantMembershipModel> getMembershipsStream(String email, Integer firstResult, Integer maxResults);
+
+    Optional<TenantMembershipModel> getMembershipById(String membershipId);
+
+    Optional<TenantMembershipModel> getMembershipByUser(UserModel user);
 
     default boolean hasMembership(UserModel user) {
-        return getMembershipsStream().anyMatch(membership -> membership.getUser().getId().equals(user.getId()));
-    }
-
-    default Optional<TenantMembershipModel> getMembership(UserModel user) {
-        return getMembershipsStream().filter(membership -> membership.getUser().getId().equals(user.getId())).findFirst();
+        return getMembershipByUser(user).isPresent();
     }
 
     boolean revokeMembership(String membershipId);

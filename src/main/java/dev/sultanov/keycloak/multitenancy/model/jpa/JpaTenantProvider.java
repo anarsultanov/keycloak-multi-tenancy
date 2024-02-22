@@ -82,7 +82,7 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user) {
-        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmAndUserId", TenantMembershipEntity.class);
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmIdAndUserId", TenantMembershipEntity.class);
         query.setParameter("realmId", realm.getId());
         query.setParameter("userId", user.getId());
         return query.getResultStream().map(m -> new TenantMembershipAdapter(session, realm, em, m));
