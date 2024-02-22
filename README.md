@@ -97,7 +97,7 @@ the created users will be tenantless and asked to create a new tenant.
 To address this issue, this extension introduces the concept of `tenant-specific IDPs` and an additional authenticator that facilitates the creation of required memberships.
 
 To configure an IDP as tenant-specific, tenants' IDs should be added to the `multi-tenancy.tenants` configuration attribute of the IDP as a **comma-separated list**. 
-This can be achieved using the standard [Keycloak REST API](https://www.keycloak.org/docs-api/23.0.4/rest-api/index.html#_identity_providers).
+This can be achieved using the standard [Keycloak REST API](https://www.keycloak.org/docs-api/23.0.7/rest-api/index.html#_identity_providers).
 
 > **_Note_**
 > - _With tenant-specific IDP configuration, the IDP limits access to only the tenants listed in the configuration. 
