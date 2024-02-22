@@ -2,7 +2,7 @@
   "openapi" : "3.0.3",
   "info" : {
     "title" : "Keycloak Multi-Tenancy",
-    "version" : "23.1.0"
+    "version" : "23.2.0"
   },
   "servers" : [ {
     "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
@@ -86,6 +86,24 @@
                 }
               }
             }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update tenant",
+        "operationId" : "updateTenant",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TenantRepresentation"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
           }
         }
       },
