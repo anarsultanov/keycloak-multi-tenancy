@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
 import dev.sultanov.keycloak.multitenancy.support.BaseIntegrationTest;
 import dev.sultanov.keycloak.multitenancy.support.actor.KeycloakAdminCli;
 import dev.sultanov.keycloak.multitenancy.support.browser.AccountPage;
@@ -24,7 +25,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void admin_shouldBeAbleToRevokeMembership_whenUserAcceptsInvitation() {
+    void adminRevokesMembership_shouldSucceed_whenUserHasAcceptedInvitation() {
         // given
         var adminUser = keycloakAdminClient.createVerifiedUser();
         var tenantResource = adminUser.createTenant();
@@ -59,6 +60,41 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
                     .extracting(UserRepresentation::getEmail)
                     .extracting(String::toLowerCase)
                     .containsExactly(adminUser.getUserData().getEmail().toLowerCase());
+        }
+    }
+
+    @Test
+    void adminUpdatesTenant_shouldReturnNoContent_whenTenantIsSuccessfullyUpdated() {
+        // given
+        var adminUser = keycloakAdminClient.createVerifiedUser();
+        var tenantResource = adminUser.createTenant();
+        var newName = "new-name";
+
+        // when
+        var request = new TenantRepresentation();
+        request.setName(newName);
+        try (var response = tenantResource.updateTenant(request)) {
+
+            // then
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_NO_CONTENT);
+            assertThat(tenantResource.toRepresentation().getName()).isEqualTo(newName);
+        }
+    }
+
+    @Test
+    void adminUpdatesTenant_shouldReturnConflict_whenUpdatedTenantNameAlreadyExists() {
+        // given
+        var adminUser = keycloakAdminClient.createVerifiedUser();
+        var tenantResource = adminUser.createTenant();
+        var existingTenantName = keycloakAdminClient.createVerifiedUser().createTenant().toRepresentation().getName();
+
+        // when
+        var request = new TenantRepresentation();
+        request.setName(existingTenantName);
+        try (var response = tenantResource.updateTenant(request)) {
+
+            // then
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_CONFLICT);
         }
     }
 }

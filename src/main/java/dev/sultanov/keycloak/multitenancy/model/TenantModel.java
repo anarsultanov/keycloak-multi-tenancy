@@ -14,6 +14,8 @@ public interface TenantModel {
 
     String getName();
 
+    void setName(String name);
+
     RealmModel getRealm();
 
     /* Membership */
