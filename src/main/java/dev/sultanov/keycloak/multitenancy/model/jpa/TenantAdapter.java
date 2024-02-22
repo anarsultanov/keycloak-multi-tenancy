@@ -45,6 +45,11 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
     }
 
     @Override
+    public void setName(String name) {
+        tenant.setName(name);
+    }
+
+    @Override
     public RealmModel getRealm() {
         return session.realms().getRealm(tenant.getRealmId());
     }

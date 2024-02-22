@@ -2,14 +2,16 @@ package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.KeycloakSession;
 
 public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
@@ -25,6 +27,22 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
     @Operation(operationId = "getTenant", summary = "Get tenant")
     public TenantRepresentation getTenant() {
         return ModelMapper.toRepresentation(tenant);
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(value = MediaType.APPLICATION_JSON)
+    @Operation(operationId = "updateTenant", summary = "Update tenant")
+    public Response updateTenant(TenantRepresentation request) {
+
+        tenant.setName(request.getName());
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(ModelMapper.toRepresentation(tenant))
+                .success();
+
+        return Response.noContent().build();
     }
 
     @DELETE
