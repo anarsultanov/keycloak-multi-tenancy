@@ -57,7 +57,7 @@ public class TenantCreationRbacIntegrationTest extends BaseIntegrationTest {
         try (var response = user.tenantsResource().createTenant(tenantRepresentation)) {
 
             // then
-            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(response.getStatus()).isEqualTo(403);
         } finally {
             removeRealmAttribute(ATTRIBUTE_NAME);
         }
