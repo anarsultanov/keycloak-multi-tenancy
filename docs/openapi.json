@@ -571,6 +571,7 @@
             "readOnly" : true
           },
           "user" : {
+            "description" : "Returns basic user info only including id, username, creation date, names, email, enabled state, email verification and federation link.",
             "type" : "object",
             "allOf" : [ {
               "$ref" : "#/components/schemas/UserRepresentation"
