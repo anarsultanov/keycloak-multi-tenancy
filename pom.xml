@@ -181,8 +181,6 @@
                     <infoTitle>${project.name}</infoTitle>
                     <infoVersion>${project.version}</infoVersion>
                     <servers>{{keycloakUrl}}/auth/realms/{{realmName}}</servers>
-                    <includeDependenciesScopes>provided</includeDependenciesScopes>
-                    <scanPackages>dev.sultanov.keycloak.multitenancy.resource,org.keycloak.representations.idm</scanPackages>
                     <scanResourceClasses>
                         <dev.sultanov.keycloak.multitenancy.resource.TenantsResource>/tenants</dev.sultanov.keycloak.multitenancy.resource.TenantsResource>
                     </scanResourceClasses>
