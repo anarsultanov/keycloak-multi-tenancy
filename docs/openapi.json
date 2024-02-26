@@ -49,6 +49,9 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Unauthorized"
           }
         }
       },
@@ -68,6 +71,12 @@
         "responses" : {
           "201" : {
             "description" : "Created"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
           }
         }
       }
@@ -82,10 +91,33 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/TenantRepresentation"
+                  "required" : [ "name" ],
+                  "type" : "object",
+                  "properties" : {
+                    "id" : {
+                      "type" : "string",
+                      "readOnly" : true
+                    },
+                    "name" : {
+                      "type" : "string"
+                    },
+                    "realm" : {
+                      "type" : "string",
+                      "readOnly" : true
+                    }
+                  }
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
           }
         }
       },
@@ -102,8 +134,17 @@
           }
         },
         "responses" : {
-          "200" : {
-            "description" : "OK"
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
           }
         }
       },
@@ -113,6 +154,12 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
           }
         }
       },
@@ -166,6 +213,12 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
           }
         }
       },
@@ -185,6 +238,12 @@
         "responses" : {
           "201" : {
             "description" : "Created"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
           }
         }
       },
@@ -210,8 +269,17 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK"
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
           }
         }
       },
@@ -265,6 +333,12 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
           }
         }
       },
@@ -290,8 +364,17 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK"
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
           }
         }
       },
@@ -317,8 +400,17 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK"
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
           }
         }
       },
@@ -334,6 +426,111 @@
   },
   "components" : {
     "schemas" : {
+      "CredentialRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "userLabel" : {
+            "type" : "string"
+          },
+          "createdDate" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "secretData" : {
+            "type" : "string"
+          },
+          "credentialData" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "value" : {
+            "type" : "string"
+          },
+          "temporary" : {
+            "type" : "boolean"
+          },
+          "device" : {
+            "type" : "string",
+            "deprecated" : true
+          },
+          "hashedSaltedValue" : {
+            "type" : "string",
+            "deprecated" : true
+          },
+          "salt" : {
+            "type" : "string",
+            "deprecated" : true
+          },
+          "hashIterations" : {
+            "format" : "int32",
+            "type" : "integer",
+            "deprecated" : true
+          },
+          "counter" : {
+            "format" : "int32",
+            "type" : "integer",
+            "deprecated" : true
+          },
+          "algorithm" : {
+            "type" : "string",
+            "deprecated" : true
+          },
+          "digits" : {
+            "format" : "int32",
+            "type" : "integer",
+            "deprecated" : true
+          },
+          "period" : {
+            "format" : "int32",
+            "type" : "integer",
+            "deprecated" : true
+          },
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "deprecated" : true
+          }
+        }
+      },
+      "FederatedIdentityRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "identityProvider" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "type" : "string"
+          },
+          "userName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SocialLinkRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "socialProvider" : {
+            "type" : "string"
+          },
+          "socialUserId" : {
+            "type" : "string"
+          },
+          "socialUsername" : {
+            "type" : "string"
+          }
+        }
+      },
       "TenantInvitationRepresentation" : {
         "required" : [ "email", "roles" ],
         "type" : "object",
@@ -375,6 +572,9 @@
           },
           "user" : {
             "type" : "object",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UserRepresentation"
+            } ],
             "readOnly" : true
           },
           "roles" : {
@@ -400,6 +600,237 @@
           "realm" : {
             "type" : "string",
             "readOnly" : true
+          }
+        }
+      },
+      "UserConsentRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "clientId" : {
+            "type" : "string"
+          },
+          "grantedClientScopes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "createdDate" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "lastUpdatedDate" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "grantedRealmRoles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "deprecated" : true
+          }
+        }
+      },
+      "UserProfileAttributeGroupMetadata" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "displayHeader" : {
+            "type" : "string"
+          },
+          "displayDescription" : {
+            "type" : "string"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          }
+        }
+      },
+      "UserProfileAttributeMetadata" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "required" : {
+            "type" : "boolean"
+          },
+          "readOnly" : {
+            "type" : "boolean"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "validators" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object",
+              "additionalProperties" : { }
+            }
+          },
+          "group" : {
+            "type" : "string"
+          }
+        }
+      },
+      "UserProfileMetadata" : {
+        "type" : "object",
+        "properties" : {
+          "attributes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserProfileAttributeMetadata"
+            }
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserProfileAttributeGroupMetadata"
+            }
+          }
+        }
+      },
+      "UserRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "self" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "origin" : {
+            "type" : "string"
+          },
+          "createdTimestamp" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "totp" : {
+            "type" : "boolean"
+          },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "federationLink" : {
+            "type" : "string"
+          },
+          "serviceAccountClientId" : {
+            "type" : "string"
+          },
+          "attributes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          },
+          "credentials" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CredentialRepresentation"
+            }
+          },
+          "disableableCredentialTypes" : {
+            "uniqueItems" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "requiredActions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "federatedIdentities" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FederatedIdentityRepresentation"
+            }
+          },
+          "realmRoles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "clientRoles" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          },
+          "clientConsents" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserConsentRepresentation"
+            }
+          },
+          "notBefore" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "applicationRoles" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "deprecated" : true
+          },
+          "socialLinks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SocialLinkRepresentation"
+            },
+            "deprecated" : true
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "access" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "boolean"
+            }
+          },
+          "userProfileMetadata" : {
+            "$ref" : "#/components/schemas/UserProfileMetadata"
           }
         }
       }

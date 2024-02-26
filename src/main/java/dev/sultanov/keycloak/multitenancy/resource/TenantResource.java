@@ -11,6 +11,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
 
 public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
@@ -25,6 +30,12 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getTenant", summary = "Get tenant")
+    @APIResponses({
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, implementation = TenantRepresentation.class))),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public TenantRepresentation getTenant() {
         return ModelMapper.toRepresentation(tenant);
     }
@@ -33,6 +44,12 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(value = MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateTenant", summary = "Update tenant")
+    @APIResponses({
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Response updateTenant(TenantRepresentation request) {
 
         tenant.setName(request.getName());
@@ -47,6 +64,11 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
     @DELETE
     @Operation(operationId = "deleteTenant", summary = "Delete tenant")
+    @APIResponses({
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public void deleteTenant() {
         if (tenantProvider.deleteTenant(realm, tenant.getId())) {
             adminEvent.operation(OperationType.DELETE)

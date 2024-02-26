@@ -33,9 +33,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -52,7 +52,11 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "createInvitation", summary = "Create invitation")
-    @APIResponse(responseCode = "201", description = "Created")
+    @APIResponses({
+            @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Response createInvitation(@RequestBody(required = true) TenantInvitationRepresentation request) {
         String email = request.getEmail();
         if (!isValidEmail(email)) {
@@ -93,7 +97,11 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "listInvitations", summary = "List invitations")
-    @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantInvitationRepresentation.class)))
+    @APIResponses({
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantInvitationRepresentation.class))),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<TenantInvitationRepresentation> listInvitations(
             @Parameter(description = "Invitee email") @QueryParam("search") String searchQuery,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
@@ -112,13 +120,19 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     @DELETE
     @Operation(operationId = "revokeInvitation", summary = "Revoke invitation")
     @Path("{invitationId}")
+    @APIResponses({
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Response revokeInvitation(@PathParam("invitationId") String invitationId) {
         var revoked = tenant.revokeInvitation(invitationId);
         if (revoked) {
             adminEvent.operation(OperationType.DELETE)
                     .resourcePath(session.getContext().getUri())
                     .success();
-            return Response.status(204).build();
+            return Response.noContent().build();
         } else {
             throw new NotFoundException(String.format("No invitation with id %s", invitationId));
         }
