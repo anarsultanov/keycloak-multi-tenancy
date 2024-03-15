@@ -15,7 +15,7 @@ class PageResolver {
             return new ReviewInvitationsPage(page);
         } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Select tenant")).isVisible()) {
             return new SelectTenantPage(page);
-        } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Welcome to Keycloak account management")).isVisible()) {
+        } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Personal info")).isVisible()) {
             return new AccountPage(page);
         } else if (page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("We are sorry...")).isVisible()) {
             return new ErrorPage(page);

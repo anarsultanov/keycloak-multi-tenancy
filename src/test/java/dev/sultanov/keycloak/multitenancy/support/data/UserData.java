@@ -16,7 +16,7 @@ public class UserData {
     public static UserData random() {
         var firstName = faker.name().firstName();
         var lastName = faker.name().lastName();
-        var email = faker.internet().emailAddress(firstName + "." + lastName);
+        var email = faker.internet().emailAddress(firstName + "." + lastName.replaceAll("[^A-Za-z]", "")).toLowerCase();
         var password = faker.internet().password();
         return new UserData(firstName, lastName, email, password);
     }

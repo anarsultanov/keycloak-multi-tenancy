@@ -26,8 +26,8 @@ public class AccountPage extends AbstractPage {
     }
 
     public Optional<String> getLoggedInUser() {
-        var locator = page.locator("#landingLoggedInUser");
-        return Optional.ofNullable(locator.textContent());
+        var locator = page.getByTestId("username");
+        return Optional.ofNullable(locator.inputValue());
     }
 
 }

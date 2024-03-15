@@ -73,6 +73,7 @@ public class KeycloakAdminCli {
         var userRepresentation = new UserRepresentation();
         userRepresentation.setFirstName(userData.getFirstName());
         userRepresentation.setLastName(userData.getLastName());
+        userRepresentation.setUsername(userData.getEmail());
         userRepresentation.setEmail(userData.getEmail());
         userRepresentation.setEmailVerified(true);
         userRepresentation.setEnabled(true);

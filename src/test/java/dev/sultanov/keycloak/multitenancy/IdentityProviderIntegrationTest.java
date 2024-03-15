@@ -64,7 +64,7 @@ public class IdentityProviderIntegrationTest extends BaseIntegrationTest {
         // then
         nextPage = ((CreateTenantPage) nextPage).fillTenantData(TenantData.random()).submit();
         assertThat(nextPage).isInstanceOf(AccountPage.class);
-        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(idpUser.getUserData().getFullName());
+        assertThat(((AccountPage) nextPage).getLoggedInUser()).hasValue(idpUser.getUserData().getEmail());
 
         // cleanup
         deleteIdentityProvider(idpAlias);

@@ -4,7 +4,7 @@ import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 public class CorsResource {
 

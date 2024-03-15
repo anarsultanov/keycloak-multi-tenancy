@@ -35,7 +35,7 @@ public class BrowserIntegrationTest extends BaseIntegrationTest {
 
         nextPage = ((CreateTenantPage) nextPage).fillTenantData(TenantData.random()).submit();
         assertThat(nextPage).isInstanceOf(AccountPage.class);
-        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getFullName());
+        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getEmail());
     }
 
     @Test
@@ -54,7 +54,7 @@ public class BrowserIntegrationTest extends BaseIntegrationTest {
 
         nextPage = ((CreateTenantPage) nextPage).fillTenantData(TenantData.random()).submit();
         assertThat(nextPage).isInstanceOf(AccountPage.class);
-        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getFullName());
+        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getEmail());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class BrowserIntegrationTest extends BaseIntegrationTest {
         nextPage = ((ReviewInvitationsPage) nextPage).accept();
 
         assertThat(nextPage).isInstanceOf(AccountPage.class);
-        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getFullName());
+        assertThat(((AccountPage) nextPage).getLoggedInUser()).hasValue(user.getUserData().getEmail());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class BrowserIntegrationTest extends BaseIntegrationTest {
         nextPage = ((SelectTenantPage) nextPage).select(invitationTenant2.getName()).signIn();
 
         assertThat(nextPage).isInstanceOf(AccountPage.class);
-        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getFullName());
+        assertThat(((AccountPage) nextPage).getLoggedInUser()).contains(user.getUserData().getEmail());
     }
 
     private TenantData createInvitationFor(UserData inviteeData) {
