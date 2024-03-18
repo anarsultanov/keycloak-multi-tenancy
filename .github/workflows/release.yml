@@ -64,7 +64,7 @@ jobs:
           file_pattern: 'pom.xml docs/openapi.json docs/openapi.yaml'
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: staging/*.jar
           tag_name: ${{ steps.version.outputs.version }}
