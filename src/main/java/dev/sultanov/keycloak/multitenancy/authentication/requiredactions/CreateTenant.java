@@ -33,7 +33,9 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         log.debug("Initializing challenge to create a tenant");
-        Response challenge = context.form().createForm("create-tenant.ftl");
+        Response challenge = context.form()
+                .setAttribute("user", context.getAuthenticationSession().getAuthenticatedUser())
+                .createForm("create-tenant.ftl");
         context.challenge(challenge);
     }
 
