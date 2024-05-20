@@ -2,5 +2,6 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
 
   <include file="META-INF/keycloak-multi-tenancy-changelog-20221217-2113.xml"/>
+  <include file="META-INF/keycloak-multi-tenancy-changelog-20240521-0014.xml"/>
 
 </databaseChangeLog>
