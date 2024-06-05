@@ -3,30 +3,11 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
 
-    <changeSet id="20240521-0014-1" author="keycloak-multi-tenancy">
-        <validCheckSum>9:d3f77c7ecd53e9cd680fb5f43f9efafa</validCheckSum>
-        <preConditions onFail="MARK_RAN">
-            <foreignKeyConstraintExists foreignKeyName="FK_TENANT_INVITATION_ROLE_TENANT_INVITATION_ID"/>
-        </preConditions>
-        <comment>Drop FK FK_TENANT_INVITATION_ROLE_TENANT_INVITATION_ID</comment>
-        <dropForeignKeyConstraint baseTableName="TENANT_INVITATION_ROLE" constraintName="FK_TENANT_INVITATION_ROLE_TENANT_INVITATION_ID"/>
-    </changeSet>
-
     <changeSet id="20240521-0014-2" author="keycloak-multi-tenancy">
-        <validCheckSum>9:df3ca7ceb66f88d594316353c27c202f</validCheckSum>
-        <preConditions onFail="MARK_RAN">
-            <foreignKeyConstraintExists foreignKeyName="FK_TENANT_MEMBERSHIP_ROLE_TENANT_MEMBERSHIP_ID"/>
-        </preConditions>
-        <comment>Drop FK FK_TENANT_MEMBERSHIP_ROLE_TENANT_MEMBERSHIP_ID</comment>
         <dropForeignKeyConstraint baseTableName="TENANT_MEMBERSHIP_ROLE" constraintName="FK_TENANT_MEMBERSHIP_ROLE_TENANT_MEMBERSHIP_ID"/>
     </changeSet>
 
     <changeSet id="20240521-0014-3" author="keycloak-multi-tenancy">
-        <validCheckSum>9:c21ccb2826e12cf40c6e72ea48dccbcd</validCheckSum>
-        <comment>CREATE FK WITH DELETE CASCADE</comment>
-        <addForeignKeyConstraint baseColumnNames="TENANT_INVITATION_ID" baseTableName="TENANT_INVITATION_ROLE"
-                                 constraintName="FK_TENANT_INVITATION_ROLE_TENANT_INVITATION_ID" referencedColumnNames="ID" referencedTableName="TENANT_INVITATION" onDelete="CASCADE"/>
-
         <addForeignKeyConstraint baseColumnNames="TENANT_MEMBERSHIP_ID" baseTableName="TENANT_MEMBERSHIP_ROLE"
                                  constraintName="FK_TENANT_MEMBERSHIP_ROLE_TENANT_MEMBERSHIP_ID" referencedColumnNames="ID" referencedTableName="TENANT_MEMBERSHIP" onDelete="CASCADE"/>
     </changeSet>

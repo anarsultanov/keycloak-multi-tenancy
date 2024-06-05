@@ -97,4 +97,35 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
             assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_CONFLICT);
         }
     }
+
+    @Test
+    void userRemoval_shouldRemoveTheirMembership() {
+        // given
+        var adminUser = keycloakAdminClient.createVerifiedUser();
+        var tenantResource = adminUser.createTenant();
+
+        var user = keycloakAdminClient.createVerifiedUser();
+
+        var invitation = new TenantInvitationRepresentation();
+        invitation.setEmail(user.getUserData().getEmail());
+        try (var response = tenantResource.invitations().createInvitation(invitation)) {
+            assertThat(CreatedResponseUtil.getCreatedId(response)).isNotNull();
+        }
+
+        var nextPage = AccountPage.open()
+                .signIn()
+                .fillCredentials(user.getUserData().getEmail(), user.getUserData().getPassword())
+                .signIn();
+        assertThat(nextPage).isInstanceOf(ReviewInvitationsPage.class);
+        ((ReviewInvitationsPage) nextPage).accept();
+
+        // when
+        try (var response = keycloakAdminClient.getRealmResource().users().delete(user.getUserId())) {
+
+            //then
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_NO_CONTENT);
+            assertThat(tenantResource.memberships().listMemberships(null, null, null))
+                    .noneMatch(membership -> membership.getUser().getEmail().equalsIgnoreCase(user.getUserData().getEmail()));
+        }
+    }
 }
