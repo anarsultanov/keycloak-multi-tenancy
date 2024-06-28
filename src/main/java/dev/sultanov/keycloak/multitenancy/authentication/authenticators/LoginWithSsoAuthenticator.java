@@ -5,6 +5,7 @@ import static org.keycloak.services.resources.IdentityBrokerService.getIdentityP
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
@@ -67,7 +68,8 @@ public class LoginWithSsoAuthenticator implements Authenticator {
                 clientSessionCode.getOrGenerateCode(),
                 authSession.getClient().getId(),
                 authSession.getClient().getClientId(),
-                authSession.getTabId()
+                authSession.getTabId(),
+                AuthenticationProcessor.getClientData(keycloakSession, authSession)
         );
 
         return new AuthenticationRequest(keycloakSession, realm, authSession, context.getHttpRequest(), keycloakUriInfo, brokerState, redirectUri);

@@ -16,7 +16,7 @@ public class TenantsResourceProvider implements RealmResourceProvider {
     public Object getResource() {
         HttpRequest request = session.getContext().getHttpRequest();
         if (request != null && "OPTIONS".equals(request.getHttpMethod())) {
-            return new CorsResource(request);
+            return new CorsResource();
         } else {
             return new TenantsResource(session);
         }

@@ -61,14 +61,12 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
     }
 
     private void setupCors() {
-        HttpRequest request = session.getContext().getHttpRequest();
-        HttpResponse response = session.getContext().getHttpResponse();
-        Cors.add(request)
+        Cors.builder()
                 .allowedOrigins(auth.getToken())
                 .allowedMethods(CorsResource.METHODS)
                 .exposedHeaders("Location")
                 .auth()
-                .build(response);
+                .add();
     }
 
     private void setupAuth() {

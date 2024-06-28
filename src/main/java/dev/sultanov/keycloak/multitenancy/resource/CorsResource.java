@@ -12,15 +12,9 @@ public class CorsResource {
             "GET", "HEAD", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
     };
 
-    private final HttpRequest request;
-
-    public CorsResource(HttpRequest request) {
-        this.request = request;
-    }
-
     @OPTIONS
     @Path("{any:.*}")
     public Response preflight() {
-        return Cors.add(request, Response.ok()).auth().allowedMethods(METHODS).preflight().build();
+        return Cors.builder().auth().allowedMethods(METHODS).preflight().add(Response.ok());
     }
 }
