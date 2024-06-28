@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Keycloak Multi-Tenancy
-  version: 24.1.0
+  version: 25.0.0
 servers:
 - url: "{{keycloakUrl}}/auth/realms/{{realmName}}"
 paths:
@@ -36,7 +36,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TenantRepresentation'
+                  $ref: "#/components/schemas/TenantRepresentation"
         "401":
           description: Unauthorized
     post:
@@ -46,7 +46,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantRepresentation'
+              $ref: "#/components/schemas/TenantRepresentation"
         required: true
       responses:
         "201":
@@ -90,7 +90,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantRepresentation'
+              $ref: "#/components/schemas/TenantRepresentation"
       responses:
         "204":
           description: No Content
@@ -146,7 +146,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TenantInvitationRepresentation'
+                  $ref: "#/components/schemas/TenantInvitationRepresentation"
         "401":
           description: Unauthorized
         "403":
@@ -158,7 +158,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantInvitationRepresentation'
+              $ref: "#/components/schemas/TenantInvitationRepresentation"
         required: true
       responses:
         "201":
@@ -228,7 +228,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TenantMembershipRepresentation'
+                  $ref: "#/components/schemas/TenantMembershipRepresentation"
         "401":
           description: Unauthorized
         "403":
@@ -271,7 +271,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantMembershipRepresentation'
+              $ref: "#/components/schemas/TenantMembershipRepresentation"
         required: true
       responses:
         "204":
