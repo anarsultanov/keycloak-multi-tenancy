@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Keycloak Multi-Tenancy
-  version: 25.0.0
+  version: 25.1.0
 servers:
 - url: "{{keycloakUrl}}/auth/realms/{{realmName}}"
 paths:
