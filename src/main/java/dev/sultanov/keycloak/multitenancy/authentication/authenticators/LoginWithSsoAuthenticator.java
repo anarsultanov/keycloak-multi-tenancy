@@ -30,7 +30,7 @@ public class LoginWithSsoAuthenticator implements Authenticator {
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         var ssoId = formData.getFirst("sso-id");
-        var identityProviderModel = context.getRealm().getIdentityProvidersStream()
+        var identityProviderModel = context.getSession().identityProviders().getAllStream()
                 .filter(idp -> idp.getAlias().equals(ssoId))
                 .filter(IdentityProviderModel::isEnabled)
                 .filter(not(IdentityProviderModel::isLinkOnly))

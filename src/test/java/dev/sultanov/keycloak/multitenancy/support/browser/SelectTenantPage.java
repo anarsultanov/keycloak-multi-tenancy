@@ -12,11 +12,11 @@ public class SelectTenantPage extends AbstractPage {
     }
 
     public List<String> availableOptions() {
-        return page.getByRole(AriaRole.OPTION).allTextContents();
+        return page.locator("select[name='tenant']").locator("option").allTextContents();
     }
 
     public SelectTenantPage select(String tenantName) {
-        page.getByRole(AriaRole.COMBOBOX).selectOption(new SelectOption().setLabel(tenantName));
+        page.locator("select[name='tenant']").selectOption(new SelectOption().setLabel(tenantName));
         return this;
     }
 
