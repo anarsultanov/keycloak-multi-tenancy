@@ -67,6 +67,19 @@ If they accept the invitation, they can still create another tenant later using 
 Note that tenant creation through the API can be restricted to users with a specified client role by setting the `requiredRoleForTenantCreation` realm attribute.
 Users who is a member of more than one tenant will be prompted to select an active tenant when they log in.
 
+### Tenant Management Role
+
+To enable realm-wide tenant management, you can configure a new role, `manage-tenants`, which allows administrators to list and manage all tenants in the realm.
+
+#### Setup Instructions
+1. **Create the Role**
+   - Navigate to **Clients > realm-management > Roles** in the Keycloak Admin Console.
+   - Add a new role: `manage-tenants`.
+   - Optionally provide a description for clarity.
+
+2. **Assign the Role**
+   - Assign the `manage-tenants` role to appropriate realm administrators.
+
 ### Token Claims
 
 In order to use information about tenants in your application, you need to add it to the token claims.
