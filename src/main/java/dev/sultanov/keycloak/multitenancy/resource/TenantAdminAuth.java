@@ -21,4 +21,12 @@ public class TenantAdminAuth extends AdminAuth {
     boolean isTenantMember(TenantModel tenantModel) {
         return tenantModel.getMembershipByUser(getUser()).isPresent();
     }
+
+    boolean isTenantsManager() {
+        return hasAppRole(getRealmManagementClient(), Constants.TENANTS_MANAGEMENT_ROLE);
+    }
+
+    private ClientModel getRealmManagementClient() {
+        return getRealm().getClientByClientId(org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID);
+    }
 }

@@ -2,6 +2,8 @@ package dev.sultanov.keycloak.multitenancy.util;
 
 public class Constants {
 
+    public static final String TENANTS_MANAGEMENT_ROLE = "manage-tenants";
+
     public static final String TENANT_ADMIN_ROLE = "tenant-admin";
     public static final String TENANT_USER_ROLE = "tenant-user";
 
