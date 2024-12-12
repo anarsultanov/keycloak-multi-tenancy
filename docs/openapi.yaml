@@ -1,299 +1,8 @@
 ---
-openapi: 3.0.3
-info:
-  title: Keycloak Multi-Tenancy
-  version: 25.1.0
-servers:
-- url: "{{keycloakUrl}}/auth/realms/{{realmName}}"
-paths:
-  /tenants:
-    get:
-      summary: List tenants
-      operationId: listTenants
-      parameters:
-      - name: first
-        in: query
-        description: Pagination offset
-        schema:
-          format: int32
-          type: integer
-      - name: max
-        in: query
-        description: Maximum results size (defaults to 100)
-        schema:
-          format: int32
-          type: integer
-      - name: search
-        in: query
-        description: Tenant name
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TenantRepresentation"
-        "401":
-          description: Unauthorized
-    post:
-      summary: Create a tenant
-      operationId: createTenant
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TenantRepresentation"
-        required: true
-      responses:
-        "201":
-          description: Created
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-  /tenants/{tenantId}:
-    get:
-      summary: Get tenant
-      operationId: getTenant
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                required:
-                - name
-                type: object
-                properties:
-                  id:
-                    type: string
-                    readOnly: true
-                  name:
-                    type: string
-                  realm:
-                    type: string
-                    readOnly: true
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "404":
-          description: Not Found
-    put:
-      summary: Update tenant
-      operationId: updateTenant
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TenantRepresentation"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "404":
-          description: Not Found
-    delete:
-      summary: Delete tenant
-      operationId: deleteTenant
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-    parameters:
-    - name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
-  /tenants/{tenantId}/invitations:
-    get:
-      summary: List invitations
-      operationId: listInvitations
-      parameters:
-      - name: first
-        in: query
-        description: Pagination offset
-        schema:
-          format: int32
-          type: integer
-      - name: max
-        in: query
-        description: Maximum results size (defaults to 100)
-        schema:
-          format: int32
-          type: integer
-      - name: search
-        in: query
-        description: Invitee email
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TenantInvitationRepresentation"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-    post:
-      summary: Create invitation
-      operationId: createInvitation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TenantInvitationRepresentation"
-        required: true
-      responses:
-        "201":
-          description: Created
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-    parameters:
-    - name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
-  /tenants/{tenantId}/invitations/{invitationId}:
-    delete:
-      summary: Revoke invitation
-      operationId: revokeInvitation
-      parameters:
-      - name: invitationId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "404":
-          description: Not Found
-    parameters:
-    - name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
-  /tenants/{tenantId}/memberships:
-    get:
-      summary: List tenant memberships
-      operationId: listMemberships
-      parameters:
-      - name: first
-        in: query
-        description: Pagination offset
-        schema:
-          format: int32
-          type: integer
-      - name: max
-        in: query
-        description: Maximum results size (defaults to 100)
-        schema:
-          format: int32
-          type: integer
-      - name: search
-        in: query
-        description: Member email
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TenantMembershipRepresentation"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-    parameters:
-    - name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
-  /tenants/{tenantId}/memberships/{membershipId}:
-    delete:
-      summary: Revoke tenant membership
-      operationId: revokeMembership
-      parameters:
-      - name: membershipId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "404":
-          description: Not Found
-    patch:
-      summary: Update tenant membership
-      operationId: updateMembership
-      parameters:
-      - name: membershipId
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TenantMembershipRepresentation"
-        required: true
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "404":
-          description: Not Found
-    parameters:
-    - name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
+openapi: 3.1.0
 components:
   schemas:
     TenantInvitationRepresentation:
-      required:
-      - email
-      - roles
       type: object
       properties:
         id:
@@ -307,16 +16,17 @@ components:
         locale:
           type: string
         roles:
-          uniqueItems: true
           type: array
+          uniqueItems: true
           items:
             type: string
         invitedBy:
           type: string
           readOnly: true
-    TenantMembershipRepresentation:
       required:
+      - email
       - roles
+    TenantMembershipRepresentation:
       type: object
       properties:
         id:
@@ -324,6 +34,7 @@ components:
           readOnly: true
         user:
           type: object
+          readOnly: true
           properties:
             id:
               type: string
@@ -343,15 +54,14 @@ components:
               type: boolean
             federationLink:
               type: string
-          readOnly: true
         roles:
-          uniqueItems: true
           type: array
+          uniqueItems: true
           items:
             type: string
-    TenantRepresentation:
       required:
-      - name
+      - roles
+    TenantRepresentation:
       type: object
       properties:
         id:
@@ -362,3 +72,294 @@ components:
         realm:
           type: string
           readOnly: true
+      required:
+      - name
+paths:
+  /tenants:
+    get:
+      summary: List tenants
+      operationId: listTenants
+      parameters:
+      - description: Pagination offset
+        name: first
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Maximum results size (defaults to 100)
+        name: max
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Tenant name
+        name: search
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TenantRepresentation"
+        "401":
+          description: Unauthorized
+    post:
+      summary: Create a tenant
+      operationId: createTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantRepresentation"
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /tenants/{tenantId}:
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+    put:
+      summary: Update tenant
+      operationId: updateTenant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantRepresentation"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+    get:
+      summary: Get tenant
+      operationId: getTenant
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    readOnly: true
+                  name:
+                    type: string
+                  realm:
+                    type: string
+                    readOnly: true
+                required:
+                - name
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+    delete:
+      summary: Delete tenant
+      operationId: deleteTenant
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /tenants/{tenantId}/invitations:
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: List invitations
+      operationId: listInvitations
+      parameters:
+      - description: Pagination offset
+        name: first
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Maximum results size (defaults to 100)
+        name: max
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Invitee email
+        name: search
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TenantInvitationRepresentation"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    post:
+      summary: Create invitation
+      operationId: createInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantInvitationRepresentation"
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /tenants/{tenantId}/invitations/{invitationId}:
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: Revoke invitation
+      operationId: revokeInvitation
+      parameters:
+      - name: invitationId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  /tenants/{tenantId}/memberships:
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: List tenant memberships
+      operationId: listMemberships
+      parameters:
+      - description: Pagination offset
+        name: first
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Maximum results size (defaults to 100)
+        name: max
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Member email
+        name: search
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TenantMembershipRepresentation"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /tenants/{tenantId}/memberships/{membershipId}:
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Update tenant membership
+      operationId: updateMembership
+      parameters:
+      - name: membershipId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantMembershipRepresentation"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+    delete:
+      summary: Revoke tenant membership
+      operationId: revokeMembership
+      parameters:
+      - name: membershipId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+info:
+  title: Keycloak Multi-Tenancy
+  version: 25.2.0
+servers:
+- url: "{{keycloakUrl}}/auth/realms/{{realmName}}"

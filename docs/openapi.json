@@ -1,37 +1,132 @@
 {
-  "openapi" : "3.0.3",
-  "info" : {
-    "title" : "Keycloak Multi-Tenancy",
-    "version" : "25.1.0"
+  "openapi" : "3.1.0",
+  "components" : {
+    "schemas" : {
+      "TenantInvitationRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "tenantId" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "locale" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "invitedBy" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        },
+        "required" : [ "email", "roles" ]
+      },
+      "TenantMembershipRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "user" : {
+            "type" : "object",
+            "readOnly" : true,
+            "properties" : {
+              "id" : {
+                "type" : "string"
+              },
+              "createdTimestamp" : {
+                "type" : "number"
+              },
+              "username" : {
+                "type" : "string"
+              },
+              "enabled" : {
+                "type" : "boolean"
+              },
+              "firstName" : {
+                "type" : "string"
+              },
+              "lastName" : {
+                "type" : "string"
+              },
+              "email" : {
+                "type" : "string"
+              },
+              "emailVerified" : {
+                "type" : "boolean"
+              },
+              "federationLink" : {
+                "type" : "string"
+              }
+            }
+          },
+          "roles" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "roles" ]
+      },
+      "TenantRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "realm" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        },
+        "required" : [ "name" ]
+      }
+    }
   },
-  "servers" : [ {
-    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
-  } ],
   "paths" : {
     "/tenants" : {
       "get" : {
         "summary" : "List tenants",
         "operationId" : "listTenants",
         "parameters" : [ {
+          "description" : "Pagination offset",
           "name" : "first",
           "in" : "query",
-          "description" : "Pagination offset",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Maximum results size (defaults to 100)",
           "name" : "max",
           "in" : "query",
-          "description" : "Maximum results size (defaults to 100)",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Tenant name",
           "name" : "search",
           "in" : "query",
-          "description" : "Tenant name",
           "schema" : {
             "type" : "string"
           }
@@ -59,14 +154,14 @@
         "summary" : "Create a tenant",
         "operationId" : "createTenant",
         "requestBody" : {
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/TenantRepresentation"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "201" : {
@@ -82,6 +177,42 @@
       }
     },
     "/tenants/{tenantId}" : {
+      "parameters" : [ {
+        "name" : "tenantId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ],
+      "put" : {
+        "summary" : "Update tenant",
+        "operationId" : "updateTenant",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TenantRepresentation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
+          }
+        }
+      },
       "get" : {
         "summary" : "Get tenant",
         "operationId" : "getTenant",
@@ -91,7 +222,6 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "required" : [ "name" ],
                   "type" : "object",
                   "properties" : {
                     "id" : {
@@ -105,37 +235,11 @@
                       "type" : "string",
                       "readOnly" : true
                     }
-                  }
+                  },
+                  "required" : [ "name" ]
                 }
               }
             }
-          },
-          "401" : {
-            "description" : "Unauthorized"
-          },
-          "403" : {
-            "description" : "Forbidden"
-          },
-          "404" : {
-            "description" : "Not Found"
-          }
-        }
-      },
-      "put" : {
-        "summary" : "Update tenant",
-        "operationId" : "updateTenant",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/TenantRepresentation"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "204" : {
-            "description" : "No Content"
           },
           "401" : {
             "description" : "Unauthorized"
@@ -162,7 +266,9 @@
             "description" : "Forbidden"
           }
         }
-      },
+      }
+    },
+    "/tenants/{tenantId}/invitations" : {
       "parameters" : [ {
         "name" : "tenantId",
         "in" : "path",
@@ -170,32 +276,30 @@
         "schema" : {
           "type" : "string"
         }
-      } ]
-    },
-    "/tenants/{tenantId}/invitations" : {
+      } ],
       "get" : {
         "summary" : "List invitations",
         "operationId" : "listInvitations",
         "parameters" : [ {
+          "description" : "Pagination offset",
           "name" : "first",
           "in" : "query",
-          "description" : "Pagination offset",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Maximum results size (defaults to 100)",
           "name" : "max",
           "in" : "query",
-          "description" : "Maximum results size (defaults to 100)",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Invitee email",
           "name" : "search",
           "in" : "query",
-          "description" : "Invitee email",
           "schema" : {
             "type" : "string"
           }
@@ -226,14 +330,14 @@
         "summary" : "Create invitation",
         "operationId" : "createInvitation",
         "requestBody" : {
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/TenantInvitationRepresentation"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "201" : {
@@ -246,7 +350,9 @@
             "description" : "Forbidden"
           }
         }
-      },
+      }
+    },
+    "/tenants/{tenantId}/invitations/{invitationId}" : {
       "parameters" : [ {
         "name" : "tenantId",
         "in" : "path",
@@ -254,9 +360,7 @@
         "schema" : {
           "type" : "string"
         }
-      } ]
-    },
-    "/tenants/{tenantId}/invitations/{invitationId}" : {
+      } ],
       "delete" : {
         "summary" : "Revoke invitation",
         "operationId" : "revokeInvitation",
@@ -282,7 +386,9 @@
             "description" : "Not Found"
           }
         }
-      },
+      }
+    },
+    "/tenants/{tenantId}/memberships" : {
       "parameters" : [ {
         "name" : "tenantId",
         "in" : "path",
@@ -290,32 +396,30 @@
         "schema" : {
           "type" : "string"
         }
-      } ]
-    },
-    "/tenants/{tenantId}/memberships" : {
+      } ],
       "get" : {
         "summary" : "List tenant memberships",
         "operationId" : "listMemberships",
         "parameters" : [ {
+          "description" : "Pagination offset",
           "name" : "first",
           "in" : "query",
-          "description" : "Pagination offset",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Maximum results size (defaults to 100)",
           "name" : "max",
           "in" : "query",
-          "description" : "Maximum results size (defaults to 100)",
           "schema" : {
-            "format" : "int32",
-            "type" : "integer"
+            "type" : "integer",
+            "format" : "int32"
           }
         }, {
+          "description" : "Member email",
           "name" : "search",
           "in" : "query",
-          "description" : "Member email",
           "schema" : {
             "type" : "string"
           }
@@ -341,7 +445,9 @@
             "description" : "Forbidden"
           }
         }
-      },
+      }
+    },
+    "/tenants/{tenantId}/memberships/{membershipId}" : {
       "parameters" : [ {
         "name" : "tenantId",
         "in" : "path",
@@ -349,9 +455,43 @@
         "schema" : {
           "type" : "string"
         }
-      } ]
-    },
-    "/tenants/{tenantId}/memberships/{membershipId}" : {
+      } ],
+      "patch" : {
+        "summary" : "Update tenant membership",
+        "operationId" : "updateMembership",
+        "parameters" : [ {
+          "name" : "membershipId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TenantMembershipRepresentation"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
+          }
+        }
+      },
       "delete" : {
         "summary" : "Revoke tenant membership",
         "operationId" : "revokeMembership",
@@ -377,153 +517,14 @@
             "description" : "Not Found"
           }
         }
-      },
-      "patch" : {
-        "summary" : "Update tenant membership",
-        "operationId" : "updateMembership",
-        "parameters" : [ {
-          "name" : "membershipId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/TenantMembershipRepresentation"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "204" : {
-            "description" : "No Content"
-          },
-          "401" : {
-            "description" : "Unauthorized"
-          },
-          "403" : {
-            "description" : "Forbidden"
-          },
-          "404" : {
-            "description" : "Not Found"
-          }
-        }
-      },
-      "parameters" : [ {
-        "name" : "tenantId",
-        "in" : "path",
-        "required" : true,
-        "schema" : {
-          "type" : "string"
-        }
-      } ]
-    }
-  },
-  "components" : {
-    "schemas" : {
-      "TenantInvitationRepresentation" : {
-        "required" : [ "email", "roles" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "tenantId" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "email" : {
-            "type" : "string"
-          },
-          "locale" : {
-            "type" : "string"
-          },
-          "roles" : {
-            "uniqueItems" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "invitedBy" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "TenantMembershipRepresentation" : {
-        "required" : [ "roles" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "user" : {
-            "type" : "object",
-            "properties" : {
-              "id" : {
-                "type" : "string"
-              },
-              "createdTimestamp" : {
-                "type" : "number"
-              },
-              "username" : {
-                "type" : "string"
-              },
-              "enabled" : {
-                "type" : "boolean"
-              },
-              "firstName" : {
-                "type" : "string"
-              },
-              "lastName" : {
-                "type" : "string"
-              },
-              "email" : {
-                "type" : "string"
-              },
-              "emailVerified" : {
-                "type" : "boolean"
-              },
-              "federationLink" : {
-                "type" : "string"
-              }
-            },
-            "readOnly" : true
-          },
-          "roles" : {
-            "uniqueItems" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "TenantRepresentation" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "realm" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
       }
     }
-  }
+  },
+  "info" : {
+    "title" : "Keycloak Multi-Tenancy",
+    "version" : "25.2.0"
+  },
+  "servers" : [ {
+    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
+  } ]
 }
