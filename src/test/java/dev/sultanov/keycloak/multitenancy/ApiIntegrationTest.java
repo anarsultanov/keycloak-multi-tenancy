@@ -13,6 +13,7 @@ import dev.sultanov.keycloak.multitenancy.support.browser.AccountPage;
 import dev.sultanov.keycloak.multitenancy.support.browser.ReviewInvitationsPage;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,11 +26,33 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
 
     private static KeycloakAdminCli keycloakAdminClient;
 
+    private static KeycloakUser tenantsManager;
+    private static TenantResource tenantsManagerTenantResource;
+    private static TenantRepresentation tenantsManagerTenant;
+
     @BeforeAll
     static void setUpRealm() {
         keycloakAdminClient = KeycloakAdminCli.forMainRealm();
         createTenantsManagementRole();
 
+        tenantsManager = keycloakAdminClient.createVerifiedUser();
+        tenantsManagerTenantResource = tenantsManager.createTenant();
+        tenantsManagerTenant = tenantsManagerTenantResource.toRepresentation();
+        assignTenantsManagementRole(tenantsManager);
+
+        // remove tenants created by other tests
+        tenantsManager.tenantsResource().listTenants(null, null, null).stream()
+                .map(TenantRepresentation::getId)
+                .filter(id -> !id.equals(tenantsManagerTenant.getId()))
+                .map(tenantsManager.tenantsResource()::getTenantResource)
+                .forEach(TenantResource::deleteTenant);
+    }
+
+    @SuppressWarnings("resource")
+    @AfterAll
+    static void afterAll() {
+        tenantsManagerTenantResource.deleteTenant();
+        keycloakAdminClient.getRealmResource().users().delete(tenantsManager.getUserId());
     }
 
     private static void createTenantsManagementRole() {
@@ -47,20 +70,11 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
     private TenantResource tenantResource;
     private TenantRepresentation tenant;
 
-    private KeycloakUser tenantsManager;
-    private TenantResource tenantsManagerTenantResource;
-    private TenantRepresentation tenantsManagerTenant;
-
     @BeforeEach
     void setUp() {
         tenantAdmin = keycloakAdminClient.createVerifiedUser();
         tenantResource = tenantAdmin.createTenant();
         tenant = tenantResource.toRepresentation();
-
-        tenantsManager = keycloakAdminClient.createVerifiedUser();
-        tenantsManagerTenantResource = tenantsManager.createTenant();
-        tenantsManagerTenant = tenantsManagerTenantResource.toRepresentation();
-        assignTenantsManagementRole(tenantsManager);
     }
 
     @SuppressWarnings("resource")
@@ -68,9 +82,6 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
     void tearDown() {
         tenantResource.deleteTenant();
         keycloakAdminClient.getRealmResource().users().delete(tenantAdmin.getUserId());
-
-        tenantsManagerTenantResource.deleteTenant();
-        keycloakAdminClient.getRealmResource().users().delete(tenantsManager.getUserId());
     }
 
     @Test
@@ -212,7 +223,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
         assertThat(tenantResource.toRepresentation().getName()).isEqualTo(newName);
     }
 
-    private void assignTenantsManagementRole(KeycloakUser user) {
+    private static void assignTenantsManagementRole(KeycloakUser user) {
         keycloakAdminClient.assignClientRoleToUser(
                 org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID,
                 Constants.TENANTS_MANAGEMENT_ROLE,
