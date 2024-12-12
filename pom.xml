@@ -17,7 +17,8 @@
     </licenses>
 
     <properties>
-        <keycloak.version>25.0.6</keycloak.version>
+        <keycloak.version>26.0.7</keycloak.version>
+        <keycloak.client.version>26.0.3</keycloak.client.version>
     </properties>
 
     <dependencies>
@@ -48,7 +49,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <version>${keycloak.version}</version>
+            <version>${keycloak.client.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -8,7 +8,6 @@ import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.jbosslog.JBossLog;
@@ -48,7 +47,7 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         var tenantMemberships = getFilteredTenantMemberships(context);
-        if (tenantMemberships.size() == 0) {
+        if (tenantMemberships.isEmpty()) {
             context.success();
         } else if (tenantMemberships.size() == 1) {
             log.debugf("User is a member of a single tenant, setting active tenant automatically");
@@ -120,7 +119,7 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
             var tenantMembershipModels = tenantMembershipsStream.filter(
                             membership -> idpTenantsConfig.get().getAccessibleTenantIds().contains(membership.getTenant().getId()))
                     .toList();
-            if (tenantMembershipModels.size() == 0) {
+            if (tenantMembershipModels.isEmpty()) {
                 throw new AuthenticationFlowException("User does not have access to any of IDP tenants", AuthenticationFlowError.ACCESS_DENIED);
             }
             return tenantMembershipModels;
@@ -137,7 +136,7 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
      */
     private Optional<IdentityProviderTenantsConfig> getIdentityProviderTenantsConfig(RequiredActionContext context) {
         return getSessionNote(context, IDENTITY_PROVIDER_SESSION_NOTE)
-                .map(context.getRealm()::getIdentityProviderByAlias)
+                .map(context.getSession().identityProviders()::getByAlias)
                 .map(IdentityProviderTenantsConfig::of);
     }
 

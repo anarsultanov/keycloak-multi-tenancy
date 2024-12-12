@@ -5,7 +5,9 @@
     <#elseif section = "form">
         <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
-
+                <p>${msg("ssoInfo")}</p>
+            </div>
+            <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="sso-id" class="${properties.kcLabelClass!}">${msg("ssoLabel")}</label>
                 </div>
@@ -27,7 +29,5 @@
                 </div>
             </div>
         </form>
-    <#elseif section = "info" >
-        ${msg("ssoInfo")}
     </#if>
 </@layout.registrationLayout>

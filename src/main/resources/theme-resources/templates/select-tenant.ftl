@@ -5,6 +5,9 @@
     <#elseif section = "form">
         <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
+                <p>${msg("selectTenantInfo")}</p>
+            </div>
+            <div class="${properties.kcFormGroupClass!}">
                 <label class="${properties.kcLabelWrapperClass!}">
                     <select class="${properties.kcInputClass!}" name="tenant" required>
                         <#list data.tenants as tenant>
@@ -12,13 +15,13 @@
                         </#list>
                     </select>
                 </label>
+            </div>
+            <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                            name="accept" id="kc-accept" type="submit" value="${msg("doLogIn")}"/>
                 </div>
             </div>
         </form>
-    <#elseif section = "info" >
-        ${msg("selectTenantInfo")}
     </#if>
 </@layout.registrationLayout>

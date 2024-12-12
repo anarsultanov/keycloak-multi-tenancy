@@ -4,7 +4,9 @@
         ${kcSanitize(msg("createTenantHeader"))?no_esc}
     <#elseif section = "form">
         <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
-
+            <div class="${properties.kcFormGroupClass!}">
+                <p>${msg("createTenantInfo")}</p>
+            </div>
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="tenantName" class="${properties.kcLabelClass!}">${msg("tenantName")}</label>
@@ -29,7 +31,5 @@
                 </div>
             </div>
         </form>
-    <#elseif section = "info" >
-        ${msg("createTenantInfo")}
     </#if>
 </@layout.registrationLayout>
