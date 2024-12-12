@@ -167,7 +167,7 @@
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>4.0.5</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
