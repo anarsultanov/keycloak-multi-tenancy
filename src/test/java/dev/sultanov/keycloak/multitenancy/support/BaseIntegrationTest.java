@@ -23,6 +23,7 @@ public class BaseIntegrationTest {
             .withProviderClassesFrom("target/classes")
             .withNetwork(network)
             .withNetworkAliases("keycloak")
+            .withEnv("KC_LOGLEVEL", "DEBUG")
             .withAccessToHost(true);
 
     private static final GenericContainer<?> mailhog = new GenericContainer<>("mailhog/mailhog")

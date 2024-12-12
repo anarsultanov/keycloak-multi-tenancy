@@ -76,7 +76,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         return tenantProvider.getTenantsStream(realm)
-                .filter(tenant -> auth.isTenantMember(tenant))
+                .filter( tenant -> auth.isTenantsManager() || auth.isTenantMember(tenant))
                 .filter(tenant -> search.isEmpty() || tenant.getName().contains(search.get()))
                 .skip(firstResult)
                 .limit(maxResults)
@@ -87,10 +87,10 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     public TenantResource getTenantResource(@PathParam("tenantId") String tenantId) {
         TenantModel model = tenantProvider.getTenantById(realm, tenantId)
                 .orElseThrow(() -> new NotFoundException(String.format("%s not found", tenantId)));
-        if (!auth.isTenantAdmin(model)) {
-            throw new ForbiddenException(String.format("Insufficient permission to access %s", tenantId));
-        } else {
+        if (auth.isTenantsManager() || auth.isTenantAdmin(model)) {
             return new TenantResource(this, model);
+        } else {
+            throw new ForbiddenException(String.format("Insufficient permission to access %s", tenantId));
         }
     }
 }
