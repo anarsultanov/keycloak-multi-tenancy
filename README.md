@@ -22,6 +22,7 @@ This project is licensed under the [Apache License, Version 2.0](http://www.apac
 ## Features
 
 - Creation of a tenant during registration (Required action)
+- Customizable tenant attributes with support for multiple values and search (API)
 - Invitations for users to join the tenant (API)
 - Review of pending invitations (Required action)
 - Selection of active tenant on login (Required action)
@@ -98,6 +99,8 @@ Now information about the selected tenant will be added to token in the followin
 ```
 
 In the same way, you can set up `All tenants` mapper that will add to the token claims all tenants that the user is a member of.
+
+Additionally, the `Tenant attribute` mapper allows you to map specific tenant attributes to token claims. This is useful when you need certain tenant configuration or metadata to be available in your application. The mapper supports both single and multi-valued attributes.
 
 ### IDP and SSO Integration
 

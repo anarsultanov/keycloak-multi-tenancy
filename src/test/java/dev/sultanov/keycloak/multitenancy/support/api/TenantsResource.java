@@ -24,6 +24,7 @@ public interface TenantsResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<TenantRepresentation> listTenants(
             @QueryParam("search") String searchQuery,
+            @QueryParam("q") String attributeQuery,
             @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 

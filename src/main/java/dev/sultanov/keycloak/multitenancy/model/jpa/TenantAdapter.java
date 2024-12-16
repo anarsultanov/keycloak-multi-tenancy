@@ -6,12 +6,20 @@ import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
+import dev.sultanov.keycloak.multitenancy.model.entity.TenantAttributeEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Objects;
+import java.util.List;
+import java.util.ArrayList;
+
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -19,6 +27,9 @@ import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.PaginationUtils;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import static java.util.Optional.ofNullable;
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 
 public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
 
@@ -52,6 +63,97 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
     @Override
     public RealmModel getRealm() {
         return session.realms().getRealm(tenant.getRealmId());
+    }
+
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        boolean found = false;
+        List<TenantAttributeEntity> toRemove = new ArrayList<>();
+        for (TenantAttributeEntity attr : tenant.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                if (!found) {
+                    attr.setValue(value);
+                    found = true;
+                } else {
+                    toRemove.add(attr);
+                }
+            }
+        }
+
+        for (TenantAttributeEntity attr : toRemove) {
+            em.remove(attr);
+            tenant.getAttributes().remove(attr);
+        }
+
+        if (found) {
+            return;
+        }
+
+        persistAttributeValue(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        List<String> current = getAttributes().getOrDefault(name, List.of());
+
+        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
+            return;
+        }
+
+        // Remove all existing
+        removeAttribute(name);
+
+        // Put all new
+        for (String value : values) {
+            persistAttributeValue(name, value);
+        }
+    }
+
+    private void persistAttributeValue(String name, String value) {
+        TenantAttributeEntity attr = new TenantAttributeEntity();
+        attr.setId(KeycloakModelUtils.generateId());
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setTenant(tenant);
+        em.persist(attr);
+        tenant.getAttributes().add(attr);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        Iterator<TenantAttributeEntity> it = tenant.getAttributes().iterator();
+        while (it.hasNext()) {
+            TenantAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        for (TenantAttributeEntity attr : tenant.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        return tenant.getAttributes().stream().filter(attribute -> Objects.equals(attribute.getName(), name))
+                .map(TenantAttributeEntity::getValue);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
+        for (TenantAttributeEntity attr : tenant.getAttributes()) {
+            result.add(attr.getName(), attr.getValue());
+        }
+        return result;
     }
 
     @Override
