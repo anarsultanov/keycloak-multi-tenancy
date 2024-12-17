@@ -72,6 +72,13 @@ components:
         realm:
           type: string
           readOnly: true
+        attributes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Attributes of the tenant
       required:
       - name
 paths:
@@ -92,6 +99,11 @@ paths:
         schema:
           type: integer
           format: int32
+      - description: Tenant attribute query
+        name: q
+        in: query
+        schema:
+          type: string
       - description: Tenant name
         name: search
         in: query
@@ -168,6 +180,13 @@ paths:
                   realm:
                     type: string
                     readOnly: true
+                  attributes:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                    description: Attributes of the tenant
                 required:
                 - name
         "401":

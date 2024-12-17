@@ -3,6 +3,8 @@ package dev.sultanov.keycloak.multitenancy.model;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.Map;
+import java.util.List;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -17,6 +19,34 @@ public interface TenantModel {
     void setName(String name);
 
     RealmModel getRealm();
+
+    /* Attribute */
+     /**
+     * Set single value of specified attribute. Remove all other existing values
+     *
+     * @param name
+     * @param value
+     */
+    void setSingleAttribute(String name, String value);
+
+    void setAttribute(String name, List<String> values);
+
+    void removeAttribute(String name);
+
+    /**
+     * @param name
+     * @return null if there is not any value of specified attribute or first value otherwise. Don't throw exception if there are more values of the attribute
+     */
+    String getFirstAttribute(String name);
+
+    /**
+     * Returns tenant attributes that match the given name as a stream.
+     * @param name {@code String} Name of the attribute to be used as a filter.
+     * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
+     */
+    Stream<String> getAttributeStream(String name);
+
+    Map<String, List<String>> getAttributes();
 
     /* Membership */
 

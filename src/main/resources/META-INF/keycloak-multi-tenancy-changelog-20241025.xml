@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="tenant-attributes-001" author="keycloak-multi-tenancy">
+        <createTable tableName="TENANT_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="NVARCHAR(255)"/>
+            <column name="TENANT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="TENANT_ID" 
+            baseTableName="TENANT_ATTRIBUTE"
+            constraintName="FK_TENANT_ATTRIBUTE_TENANT" 
+            referencedColumnNames="ID"
+            referencedTableName="TENANT"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="tenant-attributes-002" author="keycloak-multi-tenancy">
+        <addColumn tableName="TENANT_ATTRIBUTE">
+            <column name="LONG_VALUE_HASH" type="BINARY(64)" />
+            <column name="LONG_VALUE_HASH_LOWER_CASE" type="BINARY(64)" />
+            <column name="LONG_VALUE" type="NCLOB" />
+        </addColumn>
+
+        <createIndex tableName="TENANT_ATTRIBUTE" indexName="TENANT_ATTR_LONG_VALUES">
+            <column name="LONG_VALUE_HASH" />
+            <column name="NAME" />
+        </createIndex>
+
+        <createIndex tableName="TENANT_ATTRIBUTE" indexName="TENANT_ATTR_LONG_VALUES_LOWER_CASE">
+            <column name="LONG_VALUE_HASH_LOWER_CASE" />
+            <column name="NAME" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

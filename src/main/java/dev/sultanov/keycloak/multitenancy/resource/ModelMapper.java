@@ -21,6 +21,7 @@ public class ModelMapper {
         representation.setId(tenant.getId());
         representation.setName(tenant.getName());
         representation.setRealm(tenant.getRealm().getName());
+        representation.setAttributes(tenant.getAttributes());
         return representation;
     }
 

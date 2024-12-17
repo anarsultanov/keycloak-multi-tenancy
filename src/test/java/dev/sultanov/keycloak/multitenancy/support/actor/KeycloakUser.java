@@ -61,7 +61,7 @@ public class KeycloakUser {
                 .fillTenantData(tenantData)
                 .submit();
         var tenantsResource = tenantsResource();
-        return tenantsResource.listTenants(null, null, null)
+        return tenantsResource.listTenants(null, null, null, null)
                 .stream()
                 .findFirst()
                 .map(TenantRepresentation::getId)
