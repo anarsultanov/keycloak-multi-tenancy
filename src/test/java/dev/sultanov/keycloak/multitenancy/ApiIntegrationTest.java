@@ -41,7 +41,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
         assignTenantsManagementRole(tenantsManager);
 
         // remove tenants created by other tests
-        tenantsManager.tenantsResource().listTenants(null, null, null).stream()
+        tenantsManager.tenantsResource().listTenants(null, null, null, null).stream()
                 .map(TenantRepresentation::getId)
                 .filter(id -> !id.equals(tenantsManagerTenant.getId()))
                 .map(tenantsManager.tenantsResource()::getTenantResource)
@@ -182,7 +182,7 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
     @Test
     void tenantsManager_shouldListAllTenants() {
         // when
-        var tenants = tenantsManager.tenantsResource().listTenants(null, null, null);
+        var tenants = tenantsManager.tenantsResource().listTenants(null, null, null, null);
 
         // then
         assertThat(tenants).extracting(TenantRepresentation::getId).containsExactlyInAnyOrder(
