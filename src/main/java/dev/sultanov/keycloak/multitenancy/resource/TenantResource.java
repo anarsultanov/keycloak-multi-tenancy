@@ -10,6 +10,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -51,8 +57,21 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response updateTenant(TenantRepresentation request) {
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            tenant.setName(request.getName());
+        }
 
-        tenant.setName(request.getName());
+        if (request.getAttributes() != null) {
+            Set<String> attrsToRemove = new HashSet<>(tenant.getAttributes().keySet());
+            attrsToRemove.removeAll(request.getAttributes().keySet());
+            for (Map.Entry<String, List<String>> attr : request.getAttributes().entrySet()) {
+                tenant.setAttribute(attr.getKey(), attr.getValue());
+            }
+
+            for (String attr : attrsToRemove) {
+                tenant.removeAttribute(attr);
+            }
+        }
 
         adminEvent.operation(OperationType.UPDATE)
                 .resourcePath(session.getContext().getUri())

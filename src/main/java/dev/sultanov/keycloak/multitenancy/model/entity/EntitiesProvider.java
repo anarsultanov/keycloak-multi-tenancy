@@ -10,7 +10,8 @@ public class EntitiesProvider implements JpaEntityProvider {
         return List.of(
                 TenantEntity.class,
                 TenantMembershipEntity.class,
-                TenantInvitationEntity.class
+                TenantInvitationEntity.class,
+                TenantAttributeEntity.class
         );
     }
 

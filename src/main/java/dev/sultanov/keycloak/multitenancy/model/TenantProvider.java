@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.model;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.keycloak.models.RealmModel;
@@ -13,6 +14,10 @@ public interface TenantProvider extends Provider {
     Optional<TenantModel> getTenantById(RealmModel realm, String id);
 
     Stream<TenantModel> getTenantsStream(RealmModel realm);
+
+    Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue);
 
     boolean deleteTenant(RealmModel realm, String id);
 

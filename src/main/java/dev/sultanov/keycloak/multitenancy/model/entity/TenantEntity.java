@@ -13,9 +13,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 @Entity
 @Table(name = "TENANT", uniqueConstraints = {@UniqueConstraint(columnNames = {"NAME", "REALM_ID"})})
 @NamedQuery(name = "getTenantsByRealmId", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId")
+@NamedQuery(name="getTenantsByAttributeNameAndValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.value = :value")
+@NamedQuery(name="getTenantsByAttributeNameAndLongValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
 public class TenantEntity {
 
     @Id
@@ -33,6 +39,11 @@ public class TenantEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")
     private Collection<TenantInvitationEntity> invitations = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = false, mappedBy = "tenant")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
+    protected Collection<TenantAttributeEntity> attributes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -72,6 +83,17 @@ public class TenantEntity {
 
     public void setInvitations(Collection<TenantInvitationEntity> invitations) {
         this.invitations = invitations;
+    }
+
+    public Collection<TenantAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new ArrayList<>();
+        }
+        return attributes;
+    }
+
+    public void setAttributes(Collection<TenantAttributeEntity> attributes) {
+        this.attributes = attributes;
     }
 
     @Override
