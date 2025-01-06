@@ -68,7 +68,7 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
             throw new ClientErrorException(String.format("Invitation for %s already exists.", email), Response.Status.CONFLICT);
         }
 
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, email);
+        UserModel user = session.users().getUserByEmail(realm, email);
         if (user != null && tenant.hasMembership(user)) {
             throw new ClientErrorException(String.format("%s is already a member of this organization.", email), Response.Status.CONFLICT);
         }
