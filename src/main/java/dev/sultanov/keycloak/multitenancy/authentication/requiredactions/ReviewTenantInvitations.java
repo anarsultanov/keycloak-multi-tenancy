@@ -57,18 +57,21 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var user = context.getUser();
         var formData = context.getHttpRequest().getDecodedFormParameters();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        var selectedTenantIds = formData.get("tenants") != null ? formData.get("tenants") : List.of();
-        provider.getTenantInvitationsStream(realm, user).forEach(invitation -> processInvitation(context, user, selectedTenantIds, invitation));
+        var selectedTenantIds = formData.get("selected-tenants") != null ? formData.get("selected-tenants") : List.of();
+        var rejectedTenantIds = formData.get("rejected-tenants") != null ? formData.get("rejected-tenants") : List.of();
+        provider.getTenantInvitationsStream(realm, user).forEach(invitation -> processInvitation(context, user, selectedTenantIds, rejectedTenantIds, invitation));
 
         // This action changes user memberships, so we need to re-evaluate required actions.
         if (provider.getTenantMembershipsStream(realm, user).findAny().isPresent()) {
             user.removeRequiredAction(CreateTenant.ID);
             user.addRequiredAction(SelectActiveTenant.ID);
+        } else {
+        	context.success();
         }
-        context.success();
+        
     }
 
-    private static void processInvitation(RequiredActionContext context, UserModel user, List<?> selectedTenantIds, TenantInvitationModel invitation) {
+    private static void processInvitation(RequiredActionContext context, UserModel user, List<?> selectedTenantIds,  List<?> rejectedTenantIds, TenantInvitationModel invitation) {
         var inviter = invitation.getInvitedBy();
         if (selectedTenantIds.contains(invitation.getTenant().getId())) {
             log.debugf("%s invitation accepted, granting membership", invitation.getTenant().getName());
@@ -76,13 +79,12 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             if (inviter != null) {
                 EmailSender.sendInvitationAcceptedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
             }
-        } else {
+        } else if (rejectedTenantIds.contains(invitation.getTenant().getId())) {
             log.debugf("%s invitation declined and will be revoked", invitation.getTenant().getName());
             if (inviter != null) {
                 EmailSender.sendInvitationDeclinedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
             }
         }
-        invitation.getTenant().revokeInvitation(invitation.getId());
     }
 
     @Override
