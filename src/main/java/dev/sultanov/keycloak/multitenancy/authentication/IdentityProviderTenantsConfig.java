@@ -17,7 +17,11 @@ public class IdentityProviderTenantsConfig {
     boolean tenantsSpecific;
     Set<String> accessibleTenantIds;
 
-    public static IdentityProviderTenantsConfig of(IdentityProviderModel identityProviderModel) {
+    public IdentityProviderTenantsConfig(boolean b, Set<Object> of) {
+		// TODO Auto-generated constructor stub
+	}
+
+	public static IdentityProviderTenantsConfig of(IdentityProviderModel identityProviderModel) {
         var configValue = identityProviderModel.getConfig().get(IDENTITY_PROVIDER_TENANTS);
         if (StringUtil.isBlank(configValue)) {
             return new IdentityProviderTenantsConfig(false, Set.of());
@@ -26,4 +30,26 @@ public class IdentityProviderTenantsConfig {
             return new IdentityProviderTenantsConfig(true, Set.copyOf(Arrays.asList(tenantIds)));
         }
     }
+
+	public boolean isTenantsSpecific() {
+		return tenantsSpecific;
+	}
+
+	public void setTenantsSpecific(boolean tenantsSpecific) {
+		this.tenantsSpecific = tenantsSpecific;
+	}
+
+	public Set<String> getAccessibleTenantIds() {
+		return accessibleTenantIds;
+	}
+
+	public void setAccessibleTenantIds(Set<String> accessibleTenantIds) {
+		this.accessibleTenantIds = accessibleTenantIds;
+	}
+
+	public static String getIdentityProviderTenants() {
+		return IDENTITY_PROVIDER_TENANTS;
+	}
+
+	
 }

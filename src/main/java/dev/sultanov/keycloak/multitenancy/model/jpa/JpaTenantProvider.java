@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
+import dev.sultanov.keycloak.multitenancy.authentication.requiredactions.CreateTenant;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
@@ -18,12 +19,10 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
+
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -35,6 +34,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 
 public class JpaTenantProvider implements TenantProvider {
 
+	private static final Logger log = Logger.getLogger(CreateTenant.class);
     private final KeycloakSession session;
     private final EntityManager em;
 
@@ -192,8 +192,32 @@ public class JpaTenantProvider implements TenantProvider {
         };
     }
 
+    // Revoking invitation method
+    @Override
+    public void revokeInvitation(String realmId, String userId, String invitationId) {
+        // Retrieve the invitation from the database
+        TenantInvitationEntity invitation = em.createQuery(
+            "SELECT i FROM TenantInvitationEntity i WHERE i.id = :invitationId AND i.realmId = :realmId AND i.userId = :userId",
+            TenantInvitationEntity.class)
+            .setParameter("invitationId", invitationId)
+            .setParameter("realmId", realmId)
+            .setParameter("userId", userId)
+            .getResultStream()
+            .findFirst()
+            .orElse(null);
+
+        // If the invitation is found, remove it
+        if (invitation != null) {
+            em.remove(invitation);
+            em.flush();
+            log.debugf("Invitation %s revoked successfully", invitationId);
+        } else {
+            log.warnf("Invitation %s not found or does not belong to user %s", invitationId, userId);
+        }
+    }
+
     @Override
     public void close() {
-
+        // Clean up if necessary
     }
 }
