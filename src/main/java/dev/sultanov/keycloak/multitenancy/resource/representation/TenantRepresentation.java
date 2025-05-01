@@ -21,38 +21,4 @@ public class TenantRepresentation {
 
     @Schema(description = "Attributes of the tenant")
     private Map<String, List<String>> attributes = new HashMap<>();
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getRealm() {
-		return realm;
-	}
-
-	public void setRealm(String realm) {
-		this.realm = realm;
-	}
-
-	public Map<String, List<String>> getAttributes() {
-		return attributes;
-	}
-
-	public void setAttributes(Map<String, List<String>> attributes) {
-		this.attributes = attributes;
-	}
-    
-    
 }
