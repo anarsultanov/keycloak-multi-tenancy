@@ -77,10 +77,9 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
                 : Collections.emptyList();
 
         boolean hasMemberships = provider.getTenantMembershipsStream(realm, user).findAny().isPresent();
-        
+
         boolean hasUnprocessedInvitations = provider.getTenantInvitationsStream(realm, user)
-                .filter(inv -> !rejectedTenants.contains(inv.getTenant().getId()))
-                .findAny().isPresent();
+                .anyMatch(inv -> !rejectedTenants.contains(inv.getTenant().getId()));
         
 		if (!hasMemberships && acceptedTenants.isEmpty() && hasUnprocessedInvitations) {
 			var invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
@@ -89,6 +88,7 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
 					.setAttribute("data", TenantsBean.fromInvitations(invitations))
 					.createForm("review-invitations.ftl");
 			context.challenge(challenge);
+			return;
 		}
 
         Set<String> allProcessedTenants = new HashSet<>();
@@ -129,7 +129,7 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         }
         context.success();
     }
-
+    
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
