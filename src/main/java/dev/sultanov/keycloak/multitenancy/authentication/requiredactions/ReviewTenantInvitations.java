@@ -71,13 +71,6 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var formData = context.getHttpRequest().getDecodedFormParameters();
         var proceed = formData.getFirst("action");
 
-        // Handle proceed action
-        if (!"proceed".equalsIgnoreCase(proceed)) {
-            log.debug("Invalid action, redisplaying challenge");
-            requiredActionChallenge(context);
-            return;
-        }
-
         // Get accepted and rejected tenants from form data
         String acceptedTenantsStr = formData.getFirst("acceptedTenants");
         String rejectedTenantsStr = formData.getFirst("rejectedTenants");
@@ -88,47 +81,39 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
                 ? Arrays.asList(rejectedTenantsStr.split(","))
                 : Collections.emptyList();
 
-        log.debugf("Received accepted tenants: %s", acceptedTenants);
-        log.debugf("Received rejected tenants: %s", rejectedTenants);
-
-//        // Store accepted and rejected tenants in backend before processing
-        setProcessedTenants(user, ACCEPTED_TENANTS_ATTR, acceptedTenants);
-        setProcessedTenants(user, REJECTED_TENANTS_ATTR, rejectedTenants);
-
         boolean hasMemberships = provider.getTenantMembershipsStream(realm, user).findAny().isPresent();
 
-        // Process accepted tenants
-        for (String tenantId : acceptedTenants) {
-            Optional<TenantInvitationModel> invitation = provider.getTenantInvitationsStream(realm, user)
-                    .filter(inv -> inv.getTenant().getId().equals(tenantId))
-                    .findFirst();
-            if (invitation.isPresent()) {
-                var inv = invitation.get();
-                log.debugf("Accepting invitation for tenant %s", inv.getTenant().getName());
-                inv.getTenant().grantMembership(user, inv.getRoles());
-                if (inv.getInvitedBy() != null) {
-                    EmailSender.sendInvitationAcceptedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), inv.getTenant().getName());
-                }
-                inv.getTenant().revokeInvitation(inv.getId());
-            } else {
-                log.warnf("No invitation found for accepted tenant ID: %s", tenantId);
-            }
-        }
+     // Process accepted and rejected tenants
+        Set<String> allProcessedTenants = new HashSet<>();
+        allProcessedTenants.addAll(acceptedTenants);
+        allProcessedTenants.addAll(rejectedTenants);
 
-        // Process rejected tenants
-        for (String tenantId : rejectedTenants) {
+        for (String tenantId : allProcessedTenants) {
             Optional<TenantInvitationModel> invitation = provider.getTenantInvitationsStream(realm, user)
                     .filter(inv -> inv.getTenant().getId().equals(tenantId))
                     .findFirst();
             if (invitation.isPresent()) {
                 var inv = invitation.get();
-                log.debugf("Rejecting invitation for tenant %s", inv.getTenant().getName());
-                if (inv.getInvitedBy() != null) {
-                    EmailSender.sendInvitationDeclinedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), inv.getTenant().getName());
+                String tenantName = inv.getTenant().getName();
+
+                if (acceptedTenants.contains(tenantId)) {
+                    log.debugf("Accepting invitation for tenant %s", tenantName);
+                    inv.getTenant().grantMembership(user, inv.getRoles());
+                    if (inv.getInvitedBy() != null) {
+                        EmailSender.sendInvitationAcceptedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
+                        log.warnf("accept tenant adding");
+                    }
+                } else if (rejectedTenants.contains(tenantId)) {
+                    log.debugf("Rejecting invitation for tenant %s", tenantName);
+                    if (inv.getInvitedBy() != null) {
+                        EmailSender.sendInvitationDeclinedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
+                        log.warnf("reject tenant adding");
+                    }
                 }
+
                 inv.getTenant().revokeInvitation(inv.getId());
             } else {
-                log.warnf("No invitation found for rejected tenant ID: %s", tenantId);
+                log.warnf("No invitation found for tenant ID: %s", tenantId);
             }
         }
 
@@ -158,11 +143,6 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             user.addRequiredAction(CreateTenant.ID);
         }
         context.success();
-    }
-
-    private void setProcessedTenants(UserModel user, String attributeName, List<String> tenants) {
-        user.setAttribute(attributeName, tenants);
-        log.debugf("Stored %s: %s", attributeName, tenants);
     }
 
     @Override
