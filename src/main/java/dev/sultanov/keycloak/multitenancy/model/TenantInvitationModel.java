@@ -14,4 +14,12 @@ public interface TenantInvitationModel {
     Set<String> getRoles();
     
     UserModel getInvitedBy();
+
+    /**
+     * Retrieves the logo URL from the tenant's attributes.
+     * @return The logo URL or null if not set.
+     */
+    default String getLogoUrl() {
+        return getTenant().getFirstAttribute("logoUrl");
+    }
 }

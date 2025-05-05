@@ -17,7 +17,7 @@ public class IdentityProviderTenantsConfig {
     boolean tenantsSpecific;
     Set<String> accessibleTenantIds;
 
-    public static IdentityProviderTenantsConfig of(IdentityProviderModel identityProviderModel) {
+	public static IdentityProviderTenantsConfig of(IdentityProviderModel identityProviderModel) {
         var configValue = identityProviderModel.getConfig().get(IDENTITY_PROVIDER_TENANTS);
         if (StringUtil.isBlank(configValue)) {
             return new IdentityProviderTenantsConfig(false, Set.of());

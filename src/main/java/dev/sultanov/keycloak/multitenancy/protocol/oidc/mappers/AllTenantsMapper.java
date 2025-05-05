@@ -3,7 +3,6 @@ package dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -59,7 +58,7 @@ public class AllTenantsMapper extends AbstractOIDCProtocolMapper implements OIDC
         var provider = keycloakSession.getProvider(TenantProvider.class);
         var claim = provider.getTenantMembershipsStream(userSession.getRealm(), userSession.getUser())
                 .map(ClaimsFactory::toClaim)
-                .collect(Collectors.toList());
+                .toList();
         if (!claim.isEmpty()) {
             var claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
             token.getOtherClaims().put(claimName, claim);

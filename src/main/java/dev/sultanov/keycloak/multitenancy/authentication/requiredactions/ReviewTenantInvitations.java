@@ -1,24 +1,32 @@
 package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
-import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
-import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
-import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.email.EmailSender;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.jbosslog.JBossLog;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserModel;
+
+import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
+import dev.sultanov.keycloak.multitenancy.email.EmailSender;
+import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import lombok.extern.jbosslog.JBossLog;
 
 @JBossLog
 public class ReviewTenantInvitations implements RequiredActionProvider, RequiredActionFactory {
 
     public static final String ID = "review-tenant-invitations";
+    private static final String ACCEPTED_TENANTS_ATTR = "acceptedTenants";
+    private static final String REJECTED_TENANTS_ATTR = "rejectedTenants";
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -37,16 +45,17 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var realm = context.getRealm();
         var user = context.getUser();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        if (user.getEmail() != null && user.isEmailVerified()) {
-            log.debug("User email is missing or not verified, skipping challenge");
-            var invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
+
+        if (user.getEmail() != null && user.isEmailVerified()) {            
+            var invitations = provider.getTenantInvitationsStream(realm, user).toList();
             if (invitations.isEmpty()) {
                 log.debug("No invitations found, challenge not required");
                 context.success();
             } else {
-                log.debug("Invitations found, initializing challenge");
-                var challenge = context.form().setAttribute("data", TenantsBean.fromInvitations(invitations)).createForm("review-invitations.ftl");
-                context.challenge(challenge);
+            	 var challenge = context.form()
+                         .setAttribute("data", TenantsBean.fromInvitations(invitations))
+                         .createForm("review-invitations.ftl");
+                 context.challenge(challenge);
             }
         }
     }
@@ -55,36 +64,72 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
     public void processAction(RequiredActionContext context) {
         var realm = context.getRealm();
         var user = context.getUser();
-        var formData = context.getHttpRequest().getDecodedFormParameters();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        var selectedTenantIds = formData.get("tenants") != null ? formData.get("tenants") : List.of();
-        provider.getTenantInvitationsStream(realm, user).forEach(invitation -> processInvitation(context, user, selectedTenantIds, invitation));
+        var formData = context.getHttpRequest().getDecodedFormParameters();
+        // Get accepted and rejected tenants from form data
+        String acceptedTenantsStr = formData.getFirst(ACCEPTED_TENANTS_ATTR);
+        String rejectedTenantsStr = formData.getFirst(REJECTED_TENANTS_ATTR);
+        List<String> acceptedTenants = acceptedTenantsStr != null && !acceptedTenantsStr.isEmpty()
+                ? Arrays.asList(acceptedTenantsStr.split(","))
+                : Collections.emptyList();
+        List<String> rejectedTenants = rejectedTenantsStr != null && !rejectedTenantsStr.isEmpty()
+                ? Arrays.asList(rejectedTenantsStr.split(","))
+                : Collections.emptyList();
 
-        // This action changes user memberships, so we need to re-evaluate required actions.
+        boolean hasMemberships = provider.getTenantMembershipsStream(realm, user).findAny().isPresent();
+
+        boolean hasUnprocessedInvitations = provider.getTenantInvitationsStream(realm, user)
+                .anyMatch(inv -> !rejectedTenants.contains(inv.getTenant().getId()));
+        
+		if (!hasMemberships && acceptedTenants.isEmpty() && hasUnprocessedInvitations) {
+			var invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
+			var challenge = context.form().setError(
+					"You must accept at least one tenant invitation to proceed if you have no existing memberships.")
+					.setAttribute("data", TenantsBean.fromInvitations(invitations))
+					.createForm("review-invitations.ftl");
+			context.challenge(challenge);
+			return;
+		}
+
+        Set<String> allProcessedTenants = new HashSet<>();
+        allProcessedTenants.addAll(acceptedTenants);
+        allProcessedTenants.addAll(rejectedTenants);
+
+        for (String tenantId : allProcessedTenants) {
+            Optional<TenantInvitationModel> invitation = provider.getTenantInvitationsStream(realm, user)
+                    .filter(inv -> inv.getTenant().getId().equals(tenantId))
+                    .findFirst();
+            if (invitation.isPresent()) {
+                var inv = invitation.get();
+                String tenantName = inv.getTenant().getName();
+
+                if (acceptedTenants.contains(tenantId)) {
+                    log.debugf("Accepting invitation for tenant %s", tenantName);
+                    inv.getTenant().grantMembership(user, inv.getRoles());
+                    if (inv.getInvitedBy() != null) {
+                        EmailSender.sendInvitationAcceptedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
+                        log.warnf("accept tenant adding");
+                    }
+                } else if (rejectedTenants.contains(tenantId)) {
+                    log.debugf("Rejecting invitation for tenant %s", tenantName);
+                    if (inv.getInvitedBy() != null) {
+                        EmailSender.sendInvitationDeclinedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
+                        log.warnf("reject tenant adding");
+                    }
+                }
+                inv.getTenant().revokeInvitation(inv.getId());
+            } else {
+                log.warnf("No invitation found for tenant ID: %s", tenantId);
+            }
+        }
+
         if (provider.getTenantMembershipsStream(realm, user).findAny().isPresent()) {
             user.removeRequiredAction(CreateTenant.ID);
             user.addRequiredAction(SelectActiveTenant.ID);
         }
         context.success();
     }
-
-    private static void processInvitation(RequiredActionContext context, UserModel user, List<?> selectedTenantIds, TenantInvitationModel invitation) {
-        var inviter = invitation.getInvitedBy();
-        if (selectedTenantIds.contains(invitation.getTenant().getId())) {
-            log.debugf("%s invitation accepted, granting membership", invitation.getTenant().getName());
-            invitation.getTenant().grantMembership(user, invitation.getRoles());
-            if (inviter != null) {
-                EmailSender.sendInvitationAcceptedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
-            }
-        } else {
-            log.debugf("%s invitation declined and will be revoked", invitation.getTenant().getName());
-            if (inviter != null) {
-                EmailSender.sendInvitationDeclinedEmail(context.getSession(), inviter, invitation.getEmail(), invitation.getTenant().getName());
-            }
-        }
-        invitation.getTenant().revokeInvitation(invitation.getId());
-    }
-
+    
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
@@ -111,5 +156,4 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
     @Override
     public void close() {
     }
-
 }
