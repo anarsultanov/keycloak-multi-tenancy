@@ -194,6 +194,13 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
+    public Stream<TenantModel> getAllTenantsStream() {
+        TypedQuery<TenantEntity> query = em.createQuery("SELECT t FROM TenantEntity t", TenantEntity.class);
+        return query.getResultStream()
+                .map(t -> new TenantAdapter(session, session.realms().getRealm(t.getRealmId()), em, t));
+    }
+    
+    @Override
     public void close() {
         // Clean up if necessary
     }
