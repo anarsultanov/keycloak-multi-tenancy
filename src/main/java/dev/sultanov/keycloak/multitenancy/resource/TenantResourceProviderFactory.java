@@ -12,7 +12,7 @@ public class TenantResourceProviderFactory implements RealmResourceProviderFacto
         return new RealmResourceProvider() {
             @Override
             public Object getResource() {
-                return new TenantController(session); // Your resource
+                return new GetUserTenants(session); // Your resource
             }
 
             @Override

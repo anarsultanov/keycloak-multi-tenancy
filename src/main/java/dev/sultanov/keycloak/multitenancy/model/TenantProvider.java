@@ -25,5 +25,5 @@ public interface TenantProvider extends Provider {
 
     Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user);
 
-    Stream<TenantModel> getAllTenantsStream();
+    Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user);
 }

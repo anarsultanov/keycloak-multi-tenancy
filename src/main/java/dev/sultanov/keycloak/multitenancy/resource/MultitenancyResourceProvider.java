@@ -13,7 +13,7 @@ public class MultitenancyResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        return new TenantController(session); // Your custom REST controller
+        return new GetUserTenants(session); // Your custom REST controller
     }
 
     @Override

@@ -1,9 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
-import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.dto.TenantDto;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
-
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
 import org.keycloak.models.KeycloakSession;
@@ -19,22 +17,13 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class TenantController {
+public class GetUserTenants {
 
-    private static final Logger log = Logger.getLogger(TenantController.class);
     private final KeycloakSession session;
 
-    public TenantController(KeycloakSession session) {
+    public GetUserTenants(KeycloakSession session) {
         this.session = session;
-    }
-
-    @GET
-    @Path("/info")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getUserInfo() {
-        return "{\"status\": \"Tenant controller working!\"}";
     }
 
     @GET
@@ -70,28 +59,31 @@ public class TenantController {
         }
 
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
-        Stream<TenantModel> allTenants = tenantProvider.getAllTenantsStream(); // You need to have this method in TenantProvider
+        if (tenantProvider == null) {
+            log.error("TenantProvider not available");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Tenant provider not available")
+                    .build();
+        }
 
-        List<Map<String, Object>> tenants = allTenants
+        List<TenantDto> tenants = tenantProvider.getUserTenantsStream(realm, user)
                 .map(tenant -> {
-                    Optional<TenantMembershipModel> membershipOpt = tenant.getMembershipByUser(user);
-                    if (membershipOpt.isPresent()) {
-                        Map<String, Object> tenantData = new HashMap<>();
-                        tenantData.put("id", tenant.getId());
-                        tenantData.put("name", tenant.getName());
-                        tenantData.put("realm", tenant.getRealm().getName());
+                    Map<String, List<String>> attributes = new HashMap<>();
+                    tenant.getAttributes().forEach((k, v) -> attributes.put(k, new ArrayList<>(v)));
 
-                        Map<String, List<String>> attributes = new HashMap<>();
-                        tenant.getAttributes().forEach((k, v) -> attributes.put(k, new ArrayList<>(v)));
-                        tenantData.put("attributes", attributes);
+                    TenantDto tenantDto = new TenantDto(
+                            tenant.getId(),
+                            tenant.getName(),
+                            tenant.getRealm().getName(),
+                            attributes
+                    );
 
-                        return tenantData;
-                    }
-                    return null;
+                    log.debugf("Found tenant: %s (%s) for user %s", tenant.getName(), tenant.getId(), userId);
+                    return tenantDto;
                 })
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
+        log.debugf("Returning %d tenants for user %s", tenants.size(), userId);
         return Response.ok(tenants).build();
     }
 }

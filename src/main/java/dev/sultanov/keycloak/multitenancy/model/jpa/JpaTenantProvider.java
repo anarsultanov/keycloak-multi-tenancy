@@ -10,12 +10,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.jpa.JpaHashUtils;
 
+import dev.sultanov.keycloak.multitenancy.authentication.requiredactions.ReviewTenantInvitations;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
@@ -194,10 +196,20 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public Stream<TenantModel> getAllTenantsStream() {
-        TypedQuery<TenantEntity> query = em.createQuery("SELECT t FROM TenantEntity t", TenantEntity.class);
-        return query.getResultStream()
-                .map(t -> new TenantAdapter(session, session.realms().getRealm(t.getRealmId()), em, t));
+    public Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
+        Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
+        Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
+
+        Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
+        Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId()); // <-- fixed here
+
+        query.select(root).where(cb.and(realmMatch, userMatch));
+
+        return em.createQuery(query).getResultStream()
+                .map(TenantMembershipEntity::getTenant)
+                .map(entity -> new TenantAdapter(session, realm, em, entity));
     }
     
     @Override
