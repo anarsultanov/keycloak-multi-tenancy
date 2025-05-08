@@ -8,6 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
+import org.apache.commons.lang3.ObjectUtils;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 public class GetUserTenants {
 
+    private static final Logger log = Logger.getLogger(GetUserTenants.class);
     private final KeycloakSession session;
 
     public GetUserTenants(KeycloakSession session) {
@@ -59,7 +61,7 @@ public class GetUserTenants {
         }
 
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
-        if (tenantProvider == null) {
+        if (Objects.isNull(tenantProvider)) {
             log.error("TenantProvider not available");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Tenant provider not available")

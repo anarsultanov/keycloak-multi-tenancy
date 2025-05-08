@@ -2,3 +2,4 @@ dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers.ActiveTenantMapper
 dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers.AllTenantsMapper
 dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers.HardcodedTenantMapper
 dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers.TenantAttributeMapper
+dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers.ActiveTenantProtocolMapper

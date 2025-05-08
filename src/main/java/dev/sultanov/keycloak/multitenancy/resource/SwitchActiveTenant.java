@@ -1,15 +1,8 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
-import dev.sultanov.keycloak.multitenancy.model.TenantModel;
-import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.model.entity.SwitchTenantRequest;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
@@ -18,10 +11,23 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 
+import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import dev.sultanov.keycloak.multitenancy.model.entity.SwitchTenantRequest;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 public class SwitchActiveTenant {
 
     private static final Logger log = Logger.getLogger(SwitchActiveTenant.class);
-    private static final String ACTIVE_TENANT_ATTRIBUTE = "active_tenant_id";
+    private static final String ACTIVE_TENANT_ATTRIBUTE = "active_tenant";
 
     private final KeycloakSession session;
 
@@ -29,11 +35,10 @@ public class SwitchActiveTenant {
         this.session = session;
     }
 
-    @POST
+    @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response switchActiveTenant(@Context HttpHeaders headers,
-                                       SwitchTenantRequest request) {
+    public Response switchActiveTenant(@Context HttpHeaders headers, SwitchTenantRequest request) {
         RealmModel realm = session.getContext().getRealm();
 
         // Extract and verify token
@@ -89,9 +94,45 @@ public class SwitchActiveTenant {
                     .build();
         }
 
-        // Set the new active tenant ID as user attribute
+        // Attribute-based active tenant management
+        String currentActiveOrganization = user.getFirstAttribute(ACTIVE_TENANT_ATTRIBUTE);
         user.setSingleAttribute(ACTIVE_TENANT_ATTRIBUTE, request.getTenantId());
+        
+        log.info("User " + userId + " switched active tenant from " + 
+            (currentActiveOrganization != null ? currentActiveOrganization : "none") + 
+            " to " + request.getTenantId());
 
-        return Response.ok(Collections.singletonMap("activeTenantId", request.getTenantId())).build();
+        // Create event for tenant switch
+        EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection());
+        event.event(EventType.UPDATE_PROFILE)
+            .user(user)
+            .detail("new_active_organization_id", request.getTenantId())
+            .detail("previous_active_organization_id", currentActiveOrganization)
+            .success();
+
+        try {
+            // Generate new tokens with the updated active tenant attribute
+            TokenManager tokenManager = new TokenManager(session, token, realm, user);
+            return Response.ok(tokenManager.generateTokens()).build();
+        } catch (Exception e) {
+            log.error("Error generating new tokens after tenant switch", e);
+            
+            // Fallback approach if TokenManager fails
+            try {
+                // Create direct token response
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Active tenant switched to " + request.getTenantId());
+                response.put("tenantId", request.getTenantId());
+                response.put("note", "Please refresh your tokens using the refresh_token endpoint");
+                
+                return Response.ok(response).build();
+            } catch (Exception fallbackEx) {
+                log.error("Fallback response also failed", fallbackEx);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Collections.singletonMap("message", "Could not generate tokens after tenant switch"))
+                    .build();
+            }
+        }
     }
 }
