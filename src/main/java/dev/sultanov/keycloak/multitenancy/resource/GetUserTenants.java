@@ -2,13 +2,14 @@ package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.dto.TenantDto;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
-import org.apache.commons.lang3.ObjectUtils;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -37,7 +38,7 @@ public class GetUserTenants {
                 ? headers.getRequestHeader("Authorization").get(0)
                 : null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Missing or invalid Authorization header").build();
         }
 
@@ -56,12 +57,12 @@ public class GetUserTenants {
         log.debug("User ID from token: " + userId);
         log.debug("Realm: " + realm.getName());
 
-        if (user == null) {
+        if (ObjectUtils.isEmpty(user)) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("User not found").build();
         }
 
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
-        if (Objects.isNull(tenantProvider)) {
+        if (ObjectUtils.isEmpty(tenantProvider)) {
             log.error("TenantProvider not available");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Tenant provider not available")

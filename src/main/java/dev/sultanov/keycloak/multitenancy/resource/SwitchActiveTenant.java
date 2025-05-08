@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
 import org.keycloak.models.KeycloakSession;
@@ -43,7 +45,7 @@ public class SwitchActiveTenant {
 
         // Extract and verify token
         String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(Collections.singletonMap("message", "Missing or invalid Authorization header"))
                     .build();
@@ -62,14 +64,14 @@ public class SwitchActiveTenant {
         // Get user from token
         String userId = token.getSubject();
         UserModel user = session.users().getUserById(realm, userId);
-        if (user == null) {
+        if (ObjectUtils.isEmpty(user)) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(Collections.singletonMap("message", "User not found"))
                     .build();
         }
 
         // Validate request
-        if (request == null || request.getTenantId() == null || request.getTenantId().isBlank()) {
+        if (ObjectUtils.isEmpty(request) || StringUtils.isEmpty(request.getTenantId())) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Collections.singletonMap("message", "Tenant ID is required"))
                     .build();
@@ -77,7 +79,7 @@ public class SwitchActiveTenant {
 
         // Get TenantProvider and check if tenant exists for user
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
-        if (tenantProvider == null) {
+        if (ObjectUtils.isEmpty(tenantProvider)) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(Collections.singletonMap("message", "TenantProvider not available"))
                     .build();
@@ -88,7 +90,7 @@ public class SwitchActiveTenant {
                 .findFirst()
                 .orElse(null);
 
-        if (targetTenant == null) {
+        if (ObjectUtils.isEmpty(targetTenant)) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Collections.singletonMap("message", "User does not have access to the specified tenant"))
                     .build();
@@ -99,7 +101,7 @@ public class SwitchActiveTenant {
         user.setSingleAttribute(ACTIVE_TENANT_ATTRIBUTE, request.getTenantId());
         
         log.info("User " + userId + " switched active tenant from " + 
-            (currentActiveOrganization != null ? currentActiveOrganization : "none") + 
+            (StringUtils.isEmpty(currentActiveOrganization) ? "none" : currentActiveOrganization) + 
             " to " + request.getTenantId());
 
         // Create event for tenant switch
