@@ -8,7 +8,6 @@ import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
-import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.AccessToken;
@@ -101,6 +100,7 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
 
     private Map<String, Object> getActiveTenant(UserSessionModel userSession, KeycloakSession session) {
         String tenantId = userSession.getUser().getFirstAttribute(ACTIVE_TENANT_ATTRIBUTE);
+        logger.info("Fetched active_tenant: " + tenantId + " for user: " + userSession.getUser().getId());
         if (tenantId == null || tenantId.isEmpty()) {
             logger.warn("No active_tenant attribute found for user: " + userSession.getUser().getId());
             return null;
@@ -126,17 +126,32 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
         // Construct active_tenant object
         Map<String, Object> activeTenant = new HashMap<>();
         activeTenant.put("tenant_id", tenantId);
-        activeTenant.put("tenant_name", getTenantNameFromAllTenants(userSession, tenantId));
+
+        // Try all_tenants first, then fallback to TenantModel
+        String tenantName = getTenantNameFromAllTenants(userSession, tenantId);
+        if ("Unknown".equals(tenantName)) {
+            // Fallback to TenantModel (adjust if TenantModel has specific method)
+            tenantName = tenant.getName() != null ? tenant.getName() : "Unknown";
+            logger.info("Using TenantModel fallback for tenant_name: " + tenantName + " for tenantId: " + tenantId);
+        }
+        activeTenant.put("tenant_name", tenantName);
 
         // Fetch roles from all_tenants user attribute
         List<String> roles = getRolesFromAllTenants(userSession, tenantId);
         if (roles == null || roles.isEmpty()) {
+            // Fallback to TenantModel attribute
+            roles = tenant.getFirstAttribute("roles") != null ? List.of(tenant.getFirstAttribute("roles").split(",")) : new ArrayList<>();
+            logger.info("Using TenantModel fallback for roles: " + roles + " for tenantId: " + tenantId);
+        }
+        if (roles.isEmpty()) {
             // Fallback to user attribute
             roles = userSession.getUser().getAttributes().getOrDefault("tenant_roles_" + tenantId, new ArrayList<>());
+            logger.info("Using user attribute fallback tenant_roles_" + tenantId + ": " + roles);
         }
         if (roles.isEmpty()) {
             // Fallback to default
             roles = List.of("admin");
+            logger.info("Using default roles: " + roles);
         }
         activeTenant.put("roles", roles);
 
@@ -145,6 +160,7 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
 
     private List<String> getRolesFromAllTenants(UserSessionModel userSession, String tenantId) {
         String allTenantsJson = userSession.getUser().getFirstAttribute("all_tenants");
+        logger.info("Raw all_tenants attribute for user " + userSession.getUser().getId() + ": " + allTenantsJson);
         if (allTenantsJson == null) {
             logger.warn("No all_tenants attribute found for user: " + userSession.getUser().getId());
             return null;
@@ -153,6 +169,7 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
         try {
             ObjectMapper mapper = new ObjectMapper();
             List<Map<String, Object>> allTenants = mapper.readValue(allTenantsJson, new TypeReference<List<Map<String, Object>>>(){});
+            logger.info("Parsed all_tenants for user " + userSession.getUser().getId() + ": " + allTenants);
             
             Map<String, Object> activeTenant = allTenants.stream()
                     .filter(tenant -> tenantId.equals(tenant.get("tenant_id")))
@@ -162,19 +179,25 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
             if (activeTenant != null) {
                 Object rolesObj = activeTenant.getOrDefault("roles", new ArrayList<>());
                 if (rolesObj instanceof List) {
-                    return ((List<?>) rolesObj).stream()
+                    List<String> roles = ((List<?>) rolesObj).stream()
                             .map(Object::toString)
                             .collect(Collectors.toList());
+                    logger.info("Roles found for tenantId " + tenantId + ": " + roles);
+                    return roles;
                 }
+                logger.warn("Roles field is not a list for tenantId: " + tenantId);
+            } else {
+                logger.warn("No tenant found in all_tenants for tenantId: " + tenantId);
             }
         } catch (Exception e) {
-            logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId(), e);
+            logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId() + ": " + e.getMessage(), e);
         }
         return null;
     }
 
     private String getTenantNameFromAllTenants(UserSessionModel userSession, String tenantId) {
         String allTenantsJson = userSession.getUser().getFirstAttribute("all_tenants");
+        logger.info("Raw all_tenants attribute for user " + userSession.getUser().getId() + ": " + allTenantsJson);
         if (allTenantsJson == null) {
             logger.warn("No all_tenants attribute found for user: " + userSession.getUser().getId());
             return "Unknown";
@@ -183,6 +206,7 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
         try {
             ObjectMapper mapper = new ObjectMapper();
             List<Map<String, Object>> allTenants = mapper.readValue(allTenantsJson, new TypeReference<List<Map<String, Object>>>(){});
+            logger.info("Parsed all_tenants for user " + userSession.getUser().getId() + ": " + allTenants);
             
             Map<String, Object> activeTenant = allTenants.stream()
                     .filter(tenant -> tenantId.equals(tenant.get("tenant_id")))
@@ -190,12 +214,16 @@ public class ActiveTenantProtocolMapper extends AbstractOIDCProtocolMapper
                     .orElse(null);
 
             if (activeTenant != null) {
-                return (String) activeTenant.getOrDefault("tenant_name", "Unknown");
+                String tenantName = (String) activeTenant.getOrDefault("tenant_name", "Unknown");
+                logger.info("Tenant name found for tenantId " + tenantId + ": " + tenantName);
+                return tenantName;
             }
+            logger.warn("No tenant found in all_tenants for tenantId: " + tenantId);
+            return "Unknown";
         } catch (Exception e) {
-            logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId(), e);
+            logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId() + ": " + e.getMessage(), e);
+            return "Unknown";
         }
-        return "Unknown";
     }
 
     public static ProtocolMapperModel createClaimMapper() {

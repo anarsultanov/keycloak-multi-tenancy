@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper>, OIDCAccessTokenMapper {
 
     public static final String PROVIDER_ID = "active-tenant-mapper-factory";
-    private static final String ACTIVE_TENANT_ATTRIBUTE = "active_tenant_id";
+    private static final String ACTIVE_TENANT_ATTRIBUTE = "active_tenant";
     private static final Logger logger = Logger.getLogger(ActiveTenantMapperFactory.class);
 
     @Override
@@ -87,7 +87,7 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
         String claimName = mappingModel.getConfig().getOrDefault("claim.name", "active_tenant");
         String tenantId = userSession.getUser().getFirstAttribute(ACTIVE_TENANT_ATTRIBUTE);
         if (tenantId == null || tenantId.isEmpty()) {
-            logger.warn("No active_tenant_id attribute found for user: " + userSession.getUser().getId());
+            logger.warn("No active_tenant attribute found for user: " + userSession.getUser().getId());
             return token;
         }
 
