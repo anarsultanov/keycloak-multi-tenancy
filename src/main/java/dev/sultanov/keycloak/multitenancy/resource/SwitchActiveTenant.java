@@ -7,12 +7,12 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jboss.logging.Logger;
-import org.keycloak.TokenVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 
+import dev.sultanov.keycloak.multitenancy.util.TokenVerificationUtils;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.model.entity.SwitchTenantRequest;
@@ -41,34 +41,16 @@ public class SwitchActiveTenant {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response switchActiveTenant(@Context HttpHeaders headers, SwitchTenantRequest request) {
+        // Verify token using generic utility
+        TokenVerificationUtils.TokenVerificationResult verificationResult = 
+                TokenVerificationUtils.verifyToken(session, headers);
+        if (!verificationResult.isSuccess()) {
+            return verificationResult.getErrorResponse();
+        }
+
+        AccessToken token = verificationResult.getToken();
+        UserModel user = verificationResult.getUser();
         RealmModel realm = session.getContext().getRealm();
-
-        // Extract and verify token
-        String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(Collections.singletonMap("message", "Missing or invalid Authorization header"))
-                    .build();
-        }
-
-        String tokenString = authHeader.substring("Bearer ".length());
-        AccessToken token;
-        try {
-            token = TokenVerifier.create(tokenString, AccessToken.class).getToken();
-        } catch (Exception e) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(Collections.singletonMap("message", "Invalid token"))
-                    .build();
-        }
-
-        // Get user from token
-        String userId = token.getSubject();
-        UserModel user = session.users().getUserById(realm, userId);
-        if (ObjectUtils.isEmpty(user)) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(Collections.singletonMap("message", "User not found"))
-                    .build();
-        }
 
         // Validate request
         if (ObjectUtils.isEmpty(request) || StringUtils.isEmpty(request.getTenantId())) {
@@ -100,17 +82,17 @@ public class SwitchActiveTenant {
         String currentActiveOrganization = user.getFirstAttribute(ACTIVE_TENANT_ATTRIBUTE);
         user.setSingleAttribute(ACTIVE_TENANT_ATTRIBUTE, request.getTenantId());
         
-        log.info("User " + userId + " switched active tenant from " + 
-            (StringUtils.isEmpty(currentActiveOrganization) ? "none" : currentActiveOrganization) + 
-            " to " + request.getTenantId());
+        log.info("User " + user.getId() + " switched active tenant from " + 
+                (StringUtils.isEmpty(currentActiveOrganization) ? "none" : currentActiveOrganization) + 
+                " to " + request.getTenantId());
 
         // Create event for tenant switch
         EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection());
         event.event(EventType.UPDATE_PROFILE)
-            .user(user)
-            .detail("new_active_organization_id", request.getTenantId())
-            .detail("previous_active_organization_id", currentActiveOrganization)
-            .success();
+                .user(user)
+                .detail("new_active_organization_id", request.getTenantId())
+                .detail("previous_active_organization_id", currentActiveOrganization)
+                .success();
 
         try {
             // Generate new tokens with the updated active tenant attribute
@@ -132,8 +114,8 @@ public class SwitchActiveTenant {
             } catch (Exception fallbackEx) {
                 log.error("Fallback response also failed", fallbackEx);
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Collections.singletonMap("message", "Could not generate tokens after tenant switch"))
-                    .build();
+                        .entity(Collections.singletonMap("message", "Could not generate tokens after tenant switch"))
+                        .build();
             }
         }
     }

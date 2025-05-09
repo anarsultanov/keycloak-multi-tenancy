@@ -2,21 +2,17 @@ package dev.sultanov.keycloak.multitenancy.resource;
 
 import dev.sultanov.keycloak.multitenancy.dto.TenantDto;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
+import dev.sultanov.keycloak.multitenancy.util.TokenVerificationUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
-import org.keycloak.TokenVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.AccessToken;
-
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,32 +30,18 @@ public class GetUserTenants {
     public Response getMyTenants(@Context HttpHeaders headers) {
         RealmModel realm = session.getContext().getRealm();
 
-        String authHeader = headers.getRequestHeader("Authorization") != null
-                ? headers.getRequestHeader("Authorization").get(0)
-                : null;
-
-        if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Missing or invalid Authorization header").build();
+        // Verify token using generic utility
+        TokenVerificationUtils.TokenVerificationResult verificationResult = 
+                TokenVerificationUtils.verifyToken(session, headers);
+        if (!verificationResult.isSuccess()) {
+            return verificationResult.getErrorResponse();
         }
 
-        String tokenString = authHeader.substring("Bearer ".length());
-
-        AccessToken token;
-        try {
-            token = TokenVerifier.create(tokenString, AccessToken.class).getToken();
-        } catch (Exception e) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token").build();
-        }
-
-        String userId = token.getSubject(); // Globally unique Keycloak user ID
-        UserModel user = session.users().getUserById(realm, userId);
+        UserModel user = verificationResult.getUser();
+        String userId = user.getId();
 
         log.debug("User ID from token: " + userId);
         log.debug("Realm: " + realm.getName());
-
-        if (ObjectUtils.isEmpty(user)) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("User not found").build();
-        }
 
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
         if (ObjectUtils.isEmpty(tenantProvider)) {
