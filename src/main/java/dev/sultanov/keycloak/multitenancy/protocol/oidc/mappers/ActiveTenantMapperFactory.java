@@ -32,6 +32,7 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
     public static final String PROVIDER_ID = "active-tenant-mapper-factory";
     private static final String ACTIVE_TENANT_ATTRIBUTE = "active_tenant";
     private static final Logger logger = Logger.getLogger(ActiveTenantMapperFactory.class);
+    private static final ObjectMapper mapper = new ObjectMapper(); // Class-level ObjectMapper
 
     @Override
     public String getId() {
@@ -138,7 +139,6 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
         }
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
             List<Map<String, Object>> allTenants = mapper.readValue(allTenantsJson, new TypeReference<List<Map<String, Object>>>(){});
             
             Map<String, Object> activeTenant = allTenants.stream()
@@ -170,7 +170,6 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
         }
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
             List<Map<String, Object>> allTenants = mapper.readValue(allTenantsJson, new TypeReference<List<Map<String, Object>>>(){});
             
             Map<String, Object> activeTenant = allTenants.stream()
