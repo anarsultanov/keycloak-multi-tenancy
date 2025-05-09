@@ -9,7 +9,6 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class TenantDto {
 
     private String id;

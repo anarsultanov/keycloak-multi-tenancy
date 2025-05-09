@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.protocol.oidc.mappers;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -60,18 +61,19 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
 
     public void postInit(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmsStream().findFirst().orElse(null);
-        if (realm != null) {
-            for (ClientModel client : realm.getClientsStream().toList()) {
-                boolean mapperExists = client.getProtocolMappersStream()
-                        .anyMatch(mapper -> mapper.getProtocolMapper().equals(ActiveTenantProtocolMapper.PROVIDER_ID));
-                if (!mapperExists) {
-                    ProtocolMapperModel mapperModel = ActiveTenantProtocolMapper.createClaimMapper();
-                    client.addProtocolMapper(mapperModel);
-                    logger.info("Auto-registered Active Tenant Mapper for client: " + client.getClientId());
-                }
-            }
-        } else {
+        if (ObjectUtils.isEmpty(realm)) {
             logger.warn("No realms found for auto-registering Active Tenant Mapper");
+            return;
+        }
+
+        for (ClientModel client : realm.getClientsStream().toList()) {
+            boolean mapperExists = client.getProtocolMappersStream()
+                    .anyMatch(mapper -> mapper.getProtocolMapper().equals(ActiveTenantProtocolMapper.PROVIDER_ID));
+            if (!mapperExists) {
+                ProtocolMapperModel mapperModel = ActiveTenantProtocolMapper.createClaimMapper();
+                client.addProtocolMapper(mapperModel);
+                logger.info("Auto-registered Active Tenant Mapper for client: " + client.getClientId());
+            }
         }
     }
 
@@ -84,15 +86,15 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel,
                                             KeycloakSession session, UserSessionModel userSession, 
                                             ClientSessionContext clientSessionCtx) {
-        String claimName = mappingModel.getConfig().getOrDefault("claim.name", "active_tenant");
+        String claimName = ObjectUtils.defaultIfNull(mappingModel.getConfig().get("claim.name"), "active_tenant");
         String tenantId = userSession.getUser().getFirstAttribute(ACTIVE_TENANT_ATTRIBUTE);
-        if (tenantId == null || tenantId.isEmpty()) {
+        if (ObjectUtils.isEmpty(tenantId)) {
             logger.warn("No active_tenant attribute found for user: " + userSession.getUser().getId());
             return token;
         }
 
         TenantProvider tenantProvider = session.getProvider(TenantProvider.class);
-        if (tenantProvider == null) {
+        if (ObjectUtils.isEmpty(tenantProvider)) {
             logger.error("TenantProvider not available");
             return token;
         }
@@ -102,7 +104,7 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
                 .findFirst()
                 .orElse(null);
 
-        if (tenant == null) {
+        if (ObjectUtils.isEmpty(tenant)) {
             logger.warn("No tenant found for tenantId: " + tenantId + " and user: " + userSession.getUser().getId());
             return token;
         }
@@ -112,8 +114,11 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
         activeTenant.put("tenant_name", getTenantNameFromAllTenants(userSession, tenantId));
 
         List<String> roles = getRolesFromAllTenants(userSession, tenantId);
-        if (roles == null || roles.isEmpty()) {
-            roles = userSession.getUser().getAttributes().getOrDefault("tenant_roles_" + tenantId, new ArrayList<>());
+        if (ObjectUtils.isEmpty(roles)) {
+            roles = ObjectUtils.defaultIfNull(
+                    userSession.getUser().getAttributes().get("tenant_roles_" + tenantId), 
+                    new ArrayList<>()
+            );
         }
         if (roles.isEmpty()) {
             roles = List.of("admin");
@@ -127,7 +132,7 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
 
     private List<String> getRolesFromAllTenants(UserSessionModel userSession, String tenantId) {
         String allTenantsJson = userSession.getUser().getFirstAttribute("all_tenants");
-        if (allTenantsJson == null) {
+        if (ObjectUtils.isEmpty(allTenantsJson)) {
             logger.warn("No all_tenants attribute found for user: " + userSession.getUser().getId());
             return null;
         }
@@ -141,13 +146,15 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
                     .findFirst()
                     .orElse(null);
 
-            if (activeTenant != null) {
-                Object rolesObj = activeTenant.getOrDefault("roles", new ArrayList<>());
-                if (rolesObj instanceof List) {
-                    return ((List<?>) rolesObj).stream()
-                            .map(Object::toString)
-                            .collect(Collectors.toList());
-                }
+            if (ObjectUtils.isEmpty(activeTenant)) {
+                return null;
+            }
+
+            Object rolesObj = ObjectUtils.defaultIfNull(activeTenant.get("roles"), new ArrayList<>());
+            if (rolesObj instanceof List) {
+                return ((List<?>) rolesObj).stream()
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
             }
         } catch (Exception e) {
             logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId(), e);
@@ -157,7 +164,7 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
 
     private String getTenantNameFromAllTenants(UserSessionModel userSession, String tenantId) {
         String allTenantsJson = userSession.getUser().getFirstAttribute("all_tenants");
-        if (allTenantsJson == null) {
+        if (ObjectUtils.isEmpty(allTenantsJson)) {
             logger.warn("No all_tenants attribute found for user: " + userSession.getUser().getId());
             return "Unknown";
         }
@@ -171,13 +178,15 @@ public class ActiveTenantMapperFactory implements ProviderFactory<ProtocolMapper
                     .findFirst()
                     .orElse(null);
 
-            if (activeTenant != null) {
-                return (String) activeTenant.getOrDefault("tenant_name", "Unknown");
+            if (ObjectUtils.isEmpty(activeTenant)) {
+                return "Unknown";
             }
+
+            return ObjectUtils.defaultIfNull((String) activeTenant.get("tenant_name"), "Unknown");
         } catch (Exception e) {
             logger.error("Failed to parse all_tenants for user: " + userSession.getUser().getId(), e);
+            return "Unknown";
         }
-        return "Unknown";
     }
 
     @Override
