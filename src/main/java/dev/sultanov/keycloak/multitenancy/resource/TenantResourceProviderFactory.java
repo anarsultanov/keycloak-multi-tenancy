@@ -7,12 +7,12 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 public class TenantResourceProviderFactory implements RealmResourceProviderFactory {
 
-    @Override
+	@Override
     public RealmResourceProvider create(KeycloakSession session) {
         return new RealmResourceProvider() {
             @Override
             public Object getResource() {
-                return new GetUserTenants(session); // Your resource
+                return new MultitenancyRootResource(session);
             }
 
             @Override

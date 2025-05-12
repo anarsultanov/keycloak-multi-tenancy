@@ -1,3 +1,2 @@
 dev.sultanov.keycloak.multitenancy.resource.TenantsResourceProviderFactory
 dev.sultanov.keycloak.multitenancy.resource.TenantResourceProviderFactory
-dev.sultanov.keycloak.multitenancy.resource.SwitchTenantProviderFactory
