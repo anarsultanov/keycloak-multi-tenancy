@@ -86,7 +86,7 @@ public class SwitchActiveTenant {
 
         // Also store in session note for protocol mapper
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getId());
-        if (userSession != null) {
+        if (ObjectUtils.isEmpty(userSession)) {
             userSession.setNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE, request.getTenantId());
         }
 
