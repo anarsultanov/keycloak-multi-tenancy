@@ -552,6 +552,6 @@
     "version" : "26.0.2"
   },
   "servers" : [ {
-    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
+    "url" : "{{keycloakUrl}}/realms/{{realmName}}"
   } ]
 }
