@@ -86,12 +86,9 @@ public class SwitchActiveTenant {
 
         // Also store in session note for protocol mapper
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getId());
-        if (ObjectUtils.isEmpty(userSession)) {
+        if (userSession != null) {
             userSession.setNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE, request.getTenantId());
         }
-
-        // Update user roles based on the new active tenant's role attribute
-        updateUserRoles(user, targetTenant, realm);
 
         log.info("User " + user.getId() + " switched active tenant from " +
                 (StringUtils.isEmpty(currentActiveOrganization) ? "none" : currentActiveOrganization) +
@@ -125,32 +122,5 @@ public class SwitchActiveTenant {
                         .build();
             }
         }
-    }
-
-    private void updateUserRoles(UserModel user, TenantModel tenant, RealmModel realm) {
-        // Get the roles from the tenant's 'role' attribute
-        List<String> roleNames = tenant.getAttributeStream(ROLE_ATTRIBUTE)
-                .collect(Collectors.toList());
-
-        // Log the roles being assigned
-        log.info("Assigning roles " + roleNames + " to user " + user.getId() + " for tenant " + tenant.getId());
-
-        // Remove existing realm roles from user
-        user.getRoleMappingsStream()
-                .filter(role -> role.getContainer() instanceof RealmModel)
-                .forEach(user::deleteRoleMapping);
-
-        // Assign new roles to user based on the tenant's role attribute
-        for (String roleName : roleNames) {
-            RoleModel role = realm.getRole(roleName);
-            if (role != null) {
-                user.grantRole(role);
-                log.info("Assigned role " + roleName + " to user " + user.getId() + " for tenant " + tenant.getId());
-            } else {
-                log.warn("Role " + roleName + " not found in realm for tenant " + tenant.getId());
-            }
-        }
-
-        log.info("Completed role update for user " + user.getId() + " in tenant " + tenant.getId());
     }
 }
