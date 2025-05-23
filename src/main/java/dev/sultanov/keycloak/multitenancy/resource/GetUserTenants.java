@@ -60,6 +60,9 @@ public class GetUserTenants {
                             tenant.getId(),
                             tenant.getName(),
                             tenant.getRealm().getName(),
+                            tenant.getMobileNumber(),
+                            tenant.getCountryCode(), // Include country code
+                            tenant.getStatus(),      // Include status
                             attributes
                     );
 

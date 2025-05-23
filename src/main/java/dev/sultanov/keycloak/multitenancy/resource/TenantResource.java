@@ -60,14 +60,26 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
         if (request.getName() != null && !request.getName().isEmpty()) {
             tenant.setName(request.getName());
         }
-
+        if (request.getMobileNumber() != null && !request.getMobileNumber().isEmpty()) {
+            tenant.setMobileNumber(request.getMobileNumber());
+        }
+        if (request.getCountryCode() != null && !request.getCountryCode().isEmpty()) {
+            tenant.setCountryCode(request.getCountryCode());
+        }
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            tenant.setStatus(request.getStatus());
+        }
         if (request.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(tenant.getAttributes().keySet());
             attrsToRemove.removeAll(request.getAttributes().keySet());
             for (Map.Entry<String, List<String>> attr : request.getAttributes().entrySet()) {
-                tenant.setAttribute(attr.getKey(), attr.getValue());
+                // Skip reserved fields
+                if (!"mobileNumber".equalsIgnoreCase(attr.getKey()) &&
+                    !"countryCode".equalsIgnoreCase(attr.getKey()) &&
+                    !"status".equalsIgnoreCase(attr.getKey())) {
+                    tenant.setAttribute(attr.getKey(), attr.getValue());
+                }
             }
-
             for (String attr : attrsToRemove) {
                 tenant.removeAttribute(attr);
             }

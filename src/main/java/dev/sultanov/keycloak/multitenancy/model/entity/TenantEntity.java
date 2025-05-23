@@ -12,7 +12,6 @@ import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -33,6 +32,15 @@ public class TenantEntity {
 
     @Column(name = "REALM_ID", nullable = false)
     private String realmId;
+    
+    @Column(name = "MOBILE_NUMBER")
+    private String mobileNumber;
+
+    @Column(name = "COUNTRY_CODE") // Add this column
+    private String countryCode;
+
+    @Column(name = "STATUS") // Add this column
+    private String status;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")
     private Collection<TenantMembershipEntity> memberships = new ArrayList<>();
@@ -67,6 +75,30 @@ public class TenantEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Collection<TenantMembershipEntity> getMemberships() {

@@ -4,5 +4,6 @@
   <include file="META-INF/keycloak-multi-tenancy-changelog-20221217-2113.xml"/>
   <include file="META-INF/keycloak-multi-tenancy-changelog-20240521-0014.xml"/>
   <include file="META-INF/keycloak-multi-tenancy-changelog-20241025.xml"/>
+  <include file="META-INF/keycloak-multi-tenancy-changelog-20250522.xml"/>
 
 </databaseChangeLog>

@@ -14,5 +14,8 @@ public class TenantDto {
     private String id;
     private String name;
     private String realm;
+    private String mobileNumber;
+    private String countryCode;
+    private String status;
     private Map<String, List<String>> attributes;
 }
