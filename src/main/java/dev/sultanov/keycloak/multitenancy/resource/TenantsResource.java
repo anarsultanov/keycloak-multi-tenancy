@@ -32,6 +32,7 @@ import org.keycloak.utils.SearchQueryUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Stream;
 
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
@@ -49,7 +50,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
             @APIResponse(responseCode = "403", description = "Forbidden"),
-            @APIResponse(responseCode = "409", description = "Conflict (Tenant with same name/mobile number already exists)")
+            @APIResponse(responseCode = "409", description = "Conflict (Tenant with same mobile number and country code already exists)")
     })
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
         // Validate required fields
@@ -59,12 +60,19 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         if (ObjectUtils.isEmpty(request.getMobileNumber()) || ObjectUtils.isEmpty(request.getMobileNumber().trim())) {
             throw new BadRequestException("Mobile number is required");
         }
-        // Add validation for countryCode and status if they are required
         if (ObjectUtils.isEmpty(request.getCountryCode()) || ObjectUtils.isEmpty(request.getCountryCode().trim())) {
             throw new BadRequestException("Country code is required");
         }
         if (ObjectUtils.isEmpty(request.getStatus()) || ObjectUtils.isEmpty(request.getStatus().trim())) {
             throw new BadRequestException("Status is required");
+        }
+
+        // Check if tenant exists with mobile number and country code
+        if (tenantProvider.getTenantByMobileNumberAndCountryCode(realm, request.getMobileNumber(), request.getCountryCode()).isPresent()) {
+            throw new jakarta.ws.rs.WebApplicationException(
+                "Tenant with this mobile number and country code already exists.", 
+                Response.Status.CONFLICT
+            );
         }
 
         // Check role-based access
@@ -76,17 +84,13 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         // Validate any additional attributes (beyond mobileNumber, countryCode, status)
         validateAttributes(request.getAttributes());
 
-        TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
-
-        // Set mobileNumber, countryCode, and status directly as dedicated fields on the TenantModel
-        model.setMobileNumber(request.getMobileNumber());
-        model.setCountryCode(request.getCountryCode()); // Set country code
-        model.setStatus(request.getStatus());           // Set status
+        // The createTenant method in JpaTenantProvider already sets mobileNumber, countryCode, and status.
+        // There's no need to set them again on the 'model' object here, as the model is an adapter to the entity.
+        TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(), request.getCountryCode(), request.getStatus(), auth.getUser());
 
         // Set other attributes (if any, separate from mobileNumber, countryCode, status)
         if (!ObjectUtils.isEmpty(request.getAttributes())) {
             request.getAttributes().forEach((key, values) -> {
-                // Ensure mobileNumber, countryCode, and status are NOT added as attributes
                 if (!"mobileNumber".equalsIgnoreCase(key) &&
                     !"countryCode".equalsIgnoreCase(key) &&
                     !"status".equalsIgnoreCase(key) &&
@@ -105,9 +109,8 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 .representation(representation)
                 .success();
 
-        // Return the 201 Created response with the full representation of the new tenant
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getId()).build())
-                       .entity(representation) // Include the created tenant representation in the response body
+                       .entity(representation)
                        .build();
     }
 
@@ -119,16 +122,31 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "401", description = "Unauthorized")
     })
     public Stream<TenantRepresentation> listTenants(
-            @Parameter(description = "Tenant name") @QueryParam("search") String searchQuery,
-            @Parameter(description = "Tenant attribute query") @QueryParam("q") String attributeQuery,
+            @Parameter(description = "Tenant name or ID search keyword (partial match for name, exact for ID)") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Tenant mobile number (exact match)") @QueryParam("mobileNumber") String mobileNumber,
+            @Parameter(description = "Tenant country code (exact match)") @QueryParam("countryCode") String countryCode,
+            @Parameter(description = "Tenant status (exact match)") @QueryParam("status") String status,
+            @Parameter(description = "Tenant attribute query (e.g., q=city:London)") @QueryParam("q") String attributeQuery,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
             @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         firstResult = !ObjectUtils.isEmpty(firstResult) ? firstResult : 0;
         maxResults = !ObjectUtils.isEmpty(maxResults) ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
+        // Parse general attribute query
         Map<String, String> searchAttributes = ObjectUtils.isEmpty(attributeQuery)
-                ? Collections.emptyMap()
-                : SearchQueryUtils.getFields(attributeQuery);
+                ? new HashMap<>()
+                : new HashMap<>(SearchQueryUtils.getFields(attributeQuery));
+
+        // Add mobileNumber, countryCode, and status to the map if provided
+        if (!ObjectUtils.isEmpty(mobileNumber)) {
+            searchAttributes.put("mobileNumber", mobileNumber);
+        }
+        if (!ObjectUtils.isEmpty(countryCode)) {
+            searchAttributes.put("countryCode", countryCode);
+        }
+        if (!ObjectUtils.isEmpty(status)) {
+            searchAttributes.put("status", status);
+        }
 
         Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(realm, searchQuery, searchAttributes,
                 firstResult, maxResults);
@@ -159,7 +177,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 if (ObjectUtils.isEmpty(key) || ObjectUtils.isEmpty(key.trim())) {
                     throw new BadRequestException("Attribute name cannot be null or empty");
                 }
-                // Also, explicitly check if the key is one of the reserved fields
                 if ("mobileNumber".equalsIgnoreCase(key) ||
                     "countryCode".equalsIgnoreCase(key) ||
                     "status".equalsIgnoreCase(key)) {

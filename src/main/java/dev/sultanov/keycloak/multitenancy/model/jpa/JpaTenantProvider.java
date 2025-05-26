@@ -10,8 +10,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -29,6 +31,7 @@ import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException; // Add this import
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -47,19 +50,77 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public TenantModel createTenant(RealmModel realm, String name, UserModel creator) {
+    public TenantModel createTenant(RealmModel realm, String tenantName, String mobileNumber, String countryCode, String status, UserModel user) {
+        if (ObjectUtils.isEmpty(tenantName) || ObjectUtils.isEmpty(tenantName.trim())) {
+            throw new IllegalArgumentException("Tenant name cannot be null or empty.");
+        }
+        if (ObjectUtils.isEmpty(mobileNumber) || ObjectUtils.isEmpty(mobileNumber.trim())) {
+            throw new IllegalArgumentException("Mobile number cannot be null or empty.");
+        }
+        if (ObjectUtils.isEmpty(countryCode) || ObjectUtils.isEmpty(countryCode.trim())) {
+            throw new IllegalArgumentException("Country code cannot be null or empty.");
+        }
+        if (ObjectUtils.isEmpty(status) || ObjectUtils.isEmpty(status.trim())) {
+            throw new IllegalArgumentException("Status cannot be null or empty.");
+        }
+
+        // Check if a tenant already exists with this mobileNumber + countryCode
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<TenantEntity> root = query.from(TenantEntity.class);
+
+        Predicate realmPredicate = cb.equal(root.get("realmId"), realm.getId());
+        Predicate mobilePredicate = cb.equal(root.get("mobileNumber"), mobileNumber);
+        Predicate countryPredicate = cb.equal(root.get("countryCode"), countryCode);
+
+        query.select(cb.count(root)).where(cb.and(realmPredicate, mobilePredicate, countryPredicate));
+        Long count = em.createQuery(query).getSingleResult();
+
+        if (count > 0) {
+            throw new ModelDuplicateException("A tenant with this mobile number and country code already exists.");
+        }
+
+        // Create and persist new tenant entity
         TenantEntity entity = new TenantEntity();
         entity.setId(KeycloakModelUtils.generateId());
-        entity.setName(name);
+        entity.setName(tenantName);
         entity.setRealmId(realm.getId());
+        entity.setMobileNumber(mobileNumber);
+        entity.setCountryCode(countryCode);
+        entity.setStatus(status);
+
         em.persist(entity);
         em.flush();
 
         TenantModel tenant = new TenantAdapter(session, realm, em, entity);
-        tenant.grantMembership(creator, Set.of(Constants.TENANT_ADMIN_ROLE));
+
+        // Grant user membership with admin role
+        tenant.grantMembership(user, Set.of(Constants.TENANT_ADMIN_ROLE));
+
+        // Publish tenant created event
         session.getKeycloakSessionFactory().publish(tenantCreatedEvent(realm, tenant));
 
         return tenant;
+    }
+
+    @Override
+    public Optional<TenantModel> getTenantByMobileNumberAndCountryCode(RealmModel realm, String mobileNumber, String countryCode) {
+        if (ObjectUtils.isEmpty(mobileNumber) || ObjectUtils.isEmpty(countryCode)) { // Corrected check for mobileNumber
+            return Optional.empty();
+        }
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<TenantEntity> query = cb.createQuery(TenantEntity.class);
+            Root<TenantEntity> root = query.from(TenantEntity.class);
+            Predicate realmPredicate = cb.equal(root.get("realmId"), realm.getId());
+            Predicate mobilePredicate = cb.equal(root.get("mobileNumber"), mobileNumber);
+            Predicate countryPredicate = cb.equal(root.get("countryCode"), countryCode);
+            query.select(root).where(cb.and(realmPredicate, mobilePredicate, countryPredicate));
+            TenantEntity result = em.createQuery(query).getSingleResult();
+            return Optional.of(new TenantAdapter(session, realm, em, result));
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -80,7 +141,7 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+    public Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrId, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<TenantEntity> queryBuilder = builder.createQuery(TenantEntity.class);
         Root<TenantEntity> root = queryBuilder.from(TenantEntity.class);
@@ -88,21 +149,55 @@ public class JpaTenantProvider implements TenantProvider {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-        if (name != null && !name.isEmpty()) {
-            predicates.add(builder.like(root.get("name"), "%" + name + "%"));
+
+        // Search by tenant name (partial, case-insensitive) OR tenant ID (exact)
+        if (ObjectUtils.isEmpty(nameOrId)) {
+            // Check if nameOrId looks like a Keycloak ID (36 characters long, alphanumeric)
+            // This is a common pattern for Keycloak generated IDs.
+            if (nameOrId.length() == 36 && nameOrId.matches("[a-f0-9\\-]+")) {
+                predicates.add(builder.equal(root.get("id"), nameOrId));
+            } else {
+                predicates.add(builder.like(builder.lower(root.get("name")), "%" + nameOrId.toLowerCase() + "%"));
+            }
         }
 
+        // Search by mobile number (exact match)
+        String mobileNumber = attributes.get("mobileNumber");
+        if (ObjectUtils.isEmpty(mobileNumber)) {
+            predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
+        }
+
+        // Search by country code (exact match)
+        String countryCode = attributes.get("countryCode");
+        if (ObjectUtils.isEmpty(countryCode)) {
+            predicates.add(builder.equal(root.get("countryCode"), countryCode));
+        }
+        
+        // Search by status (exact match)
+        String status = attributes.get("status");
+        if (ObjectUtils.isEmpty(status)) {
+            predicates.add(builder.equal(root.get("status"), status));
+        }
+
+        // Handle generic attributes (excluding dedicated fields)
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String key = entry.getKey();
+            // Skip dedicated fields that are now directly mapped to TenantEntity properties
+            if ("mobileNumber".equalsIgnoreCase(key) ||
+                "countryCode".equalsIgnoreCase(key) ||
+                "status".equalsIgnoreCase(key)) {
+                continue;
+            }
+
             if (key == null || key.isEmpty()) {
                 continue;
             }
             String value = entry.getValue();
 
-            Join<TenantEntity, TenantAttributeEntity> attributeJoin = root.join("attributes");
+            Join<TenantEntity, TenantAttributeEntity> attributeJoin = root.join("attributes"); // Changed to directly join
 
             Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
-            Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            Predicate attrValuePredicate = builder.like(builder.lower(attributeJoin.get("value")), "%" + value.toLowerCase() + "%");
             predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
         }
 
@@ -203,13 +298,22 @@ public class JpaTenantProvider implements TenantProvider {
         Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
 
         Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
-        Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId()); // <-- fixed here
+        Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId());
 
         query.select(root).where(cb.and(realmMatch, userMatch));
 
         return em.createQuery(query).getResultStream()
                 .map(TenantMembershipEntity::getTenant)
                 .map(entity -> new TenantAdapter(session, realm, em, entity));
+    }
+    
+    // Helper method to check if a string is a valid UUID format (Keycloak ID)
+    private boolean isValidKeycloakId(String id) {
+        if (id == null || id.length() != 36) {
+            return false;
+        }
+        // Basic check for UUID format: 8-4-4-4-12 hexadecimal digits
+        return id.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
     }
     
     @Override

@@ -19,8 +19,9 @@ import org.hibernate.annotations.FetchMode;
 @Entity
 @Table(name = "TENANT", uniqueConstraints = {@UniqueConstraint(columnNames = {"NAME", "REALM_ID"})})
 @NamedQuery(name = "getTenantsByRealmId", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId")
-@NamedQuery(name="getTenantsByAttributeNameAndValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.value = :value")
-@NamedQuery(name="getTenantsByAttributeNameAndLongValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
+@NamedQuery(name = "getTenantsByAttributeNameAndValue", query = "select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.value = :value")
+@NamedQuery(name = "getTenantsByAttributeNameAndLongValue", query = "select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
+@NamedQuery(name = "getTenantByRealmAndMobileNumber", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId AND t.mobileNumber = :mobileNumber")
 public class TenantEntity {
 
     @Id
@@ -33,13 +34,13 @@ public class TenantEntity {
     @Column(name = "REALM_ID", nullable = false)
     private String realmId;
     
-    @Column(name = "MOBILE_NUMBER")
+    @Column(name = "MOBILE_NUMBER", unique = true)
     private String mobileNumber;
 
-    @Column(name = "COUNTRY_CODE") // Add this column
+    @Column(name = "COUNTRY_CODE")
     private String countryCode;
 
-    @Column(name = "STATUS") // Add this column
+    @Column(name = "STATUS")
     private String status;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")
