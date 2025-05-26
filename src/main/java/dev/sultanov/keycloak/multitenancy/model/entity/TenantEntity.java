@@ -37,10 +37,10 @@ public class TenantEntity {
     @Column(name = "MOBILE_NUMBER", unique = true)
     private String mobileNumber;
 
-    @Column(name = "COUNTRY_CODE")
+    @Column(name = "COUNTRY_CODE", nullable = false)
     private String countryCode;
 
-    @Column(name = "STATUS")
+    @Column(name = "STATUS", nullable = false)
     private String status;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "tenant")

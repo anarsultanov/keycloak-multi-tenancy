@@ -14,7 +14,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -29,13 +29,17 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.SearchQueryUtils;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+@Slf4j
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
+
+    private static final Pattern MOBILE_NUMBER_PATTERN = Pattern.compile("^[+]?[0-9]{7,15}$");
+    private static final Pattern COUNTRY_CODE_PATTERN = Pattern.compile("^[0-9]{1,3}$");
 
     public TenantsResource(KeycloakSession session) {
         super(session);
@@ -50,68 +54,88 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
             @APIResponse(responseCode = "403", description = "Forbidden"),
-            @APIResponse(responseCode = "409", description = "Conflict (Tenant with same mobile number and country code already exists)")
+            @APIResponse(responseCode = "409", description = "Conflict"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
-        // Validate required fields
-        if (ObjectUtils.isEmpty(request.getName()) || ObjectUtils.isEmpty(request.getName().trim())) {
-            throw new BadRequestException("Tenant name cannot be null or empty");
+        try {
+            if (ObjectUtils.isEmpty(request)) {
+                log.error("Tenant representation cannot be null");
+                throw new BadRequestException("Tenant representation cannot be null");
+            }
+
+            log.debug("Creating tenant with name: {}, mobileNumber: {}, countryCode: {}",
+                    request.getName(), request.getMobileNumber(), request.getCountryCode());
+
+            if (isNullOrWhitespace(request.getName())) {
+                log.error("Tenant name cannot be null or empty");
+                throw new BadRequestException("Tenant name cannot be null or empty");
+            }
+            if (isNullOrWhitespace(request.getMobileNumber())) {
+                log.error("Mobile number is required");
+                throw new BadRequestException("Mobile number is required");
+            }
+            if (!MOBILE_NUMBER_PATTERN.matcher(request.getMobileNumber()).matches()) {
+                log.error("Invalid mobile number format: {}", request.getMobileNumber());
+                throw new BadRequestException("Invalid mobile number format");
+            }
+            if (isNullOrWhitespace(request.getCountryCode())) {
+                log.error("Country code is required");
+                throw new BadRequestException("Country code is required");
+            }
+            if (!COUNTRY_CODE_PATTERN.matcher(request.getCountryCode()).matches()) {
+                log.error("Invalid country code format: {}", request.getCountryCode());
+                throw new BadRequestException("Country code must be a valid numeric code (e.g., 91, 1, 23)");
+            }
+            if (isNullOrWhitespace(request.getStatus())) {
+                log.error("Status is required");
+                throw new BadRequestException("Status is required");
+            }
+
+            if (tenantProvider.getTenantByMobileNumberAndCountryCode(realm, request.getMobileNumber(), request.getCountryCode()).isPresent()) {
+                log.error("Tenant with mobile number {} and country code {} already exists",
+                        request.getMobileNumber(), request.getCountryCode());
+                throw new jakarta.ws.rs.WebApplicationException(
+                        "Tenant with this mobile number and country code already exists.",
+                        Response.Status.CONFLICT);
+            }
+
+            var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
+            if (!ObjectUtils.isEmpty(requiredRole) && !auth.hasAppRole(auth.getClient(), requiredRole)) {
+                log.error("Missing required role for tenant creation: {}", requiredRole);
+                throw new ForbiddenException(String.format("Missing required role for tenant creation: %s", requiredRole));
+            }
+
+            validateAttributes(request.getAttributes());
+
+            TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(),
+                    request.getCountryCode(), request.getStatus(), auth.getUser());
+
+            if (!ObjectUtils.isEmpty(request.getAttributes())) {
+                request.getAttributes().forEach((key, values) -> {
+                    if (!isReservedAttribute(key) && !ObjectUtils.isEmpty(values)) {
+                        model.setAttribute(key, values);
+                    }
+                });
+            }
+
+            TenantRepresentation response = ModelMapper.toRepresentation(model);
+
+            adminEvent.operation(OperationType.CREATE)
+                    .resourcePath(session.getContext().getUri(), response.getId())
+                    .representation(response)
+                    .success();
+
+            log.info("Tenant created successfully: {}", response.getName());
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(response.getId()).build())
+                    .entity(response)
+                    .build();
+        } catch (Exception e) {
+            log.error("Failed to create tenant with name: {}, mobileNumber: {}, countryCode: {}", 
+                    request.getName(), request.getMobileNumber(), request.getCountryCode(), e);
+            throw new jakarta.ws.rs.WebApplicationException("Failed to create tenant due to server error", 
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
-        if (ObjectUtils.isEmpty(request.getMobileNumber()) || ObjectUtils.isEmpty(request.getMobileNumber().trim())) {
-            throw new BadRequestException("Mobile number is required");
-        }
-        if (ObjectUtils.isEmpty(request.getCountryCode()) || ObjectUtils.isEmpty(request.getCountryCode().trim())) {
-            throw new BadRequestException("Country code is required");
-        }
-        if (ObjectUtils.isEmpty(request.getStatus()) || ObjectUtils.isEmpty(request.getStatus().trim())) {
-            throw new BadRequestException("Status is required");
-        }
-
-        // Check if tenant exists with mobile number and country code
-        if (tenantProvider.getTenantByMobileNumberAndCountryCode(realm, request.getMobileNumber(), request.getCountryCode()).isPresent()) {
-            throw new jakarta.ws.rs.WebApplicationException(
-                "Tenant with this mobile number and country code already exists.", 
-                Response.Status.CONFLICT
-            );
-        }
-
-        // Check role-based access
-        var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
-        if (!ObjectUtils.isEmpty(requiredRole) && !auth.hasAppRole(auth.getClient(), requiredRole)) {
-            throw new ForbiddenException(String.format("Missing required role for tenant creation: %s", requiredRole));
-        }
-
-        // Validate any additional attributes (beyond mobileNumber, countryCode, status)
-        validateAttributes(request.getAttributes());
-
-        // The createTenant method in JpaTenantProvider already sets mobileNumber, countryCode, and status.
-        // There's no need to set them again on the 'model' object here, as the model is an adapter to the entity.
-        TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(), request.getCountryCode(), request.getStatus(), auth.getUser());
-
-        // Set other attributes (if any, separate from mobileNumber, countryCode, status)
-        if (!ObjectUtils.isEmpty(request.getAttributes())) {
-            request.getAttributes().forEach((key, values) -> {
-                if (!"mobileNumber".equalsIgnoreCase(key) &&
-                    !"countryCode".equalsIgnoreCase(key) &&
-                    !"status".equalsIgnoreCase(key) &&
-                    !ObjectUtils.isEmpty(values)) {
-                    model.setAttribute(key, values);
-                }
-            });
-        }
-
-        // Convert the updated TenantModel to a TenantRepresentation for the response
-        TenantRepresentation representation = ModelMapper.toRepresentation(model);
-
-        // Log admin event
-        adminEvent.operation(OperationType.CREATE)
-                .resourcePath(session.getContext().getUri(), representation.getId())
-                .representation(representation)
-                .success();
-
-        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getId()).build())
-                       .entity(representation)
-                       .build();
     }
 
     @GET
@@ -119,74 +143,120 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @Operation(operationId = "listTenants", summary = "List tenants")
     @APIResponses({
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantRepresentation.class))),
-            @APIResponse(responseCode = "401", description = "Unauthorized")
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Stream<TenantRepresentation> listTenants(
             @Parameter(description = "Tenant name or ID search keyword (partial match for name, exact for ID)") @QueryParam("search") String searchQuery,
+            @Parameter(description = "Tenant name or ID search keyword (alternative)") @QueryParam("keyword") String keyword,
             @Parameter(description = "Tenant mobile number (exact match)") @QueryParam("mobileNumber") String mobileNumber,
-            @Parameter(description = "Tenant country code (exact match)") @QueryParam("countryCode") String countryCode,
+            @Parameter(description = "Tenant country code (exact match, e.g., 91)") @QueryParam("countryCode") String countryCode,
             @Parameter(description = "Tenant status (exact match)") @QueryParam("status") String status,
             @Parameter(description = "Tenant attribute query (e.g., q=city:London)") @QueryParam("q") String attributeQuery,
+            @Parameter(description = "Require exact name match") @QueryParam("exactMatch") Boolean exactMatch,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
             @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
-        firstResult = !ObjectUtils.isEmpty(firstResult) ? firstResult : 0;
-        maxResults = !ObjectUtils.isEmpty(maxResults) ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        try {
+            log.debug("Listing tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}, status: {}, attributeQuery: {}, exactMatch: {}",
+                    searchQuery, keyword, mobileNumber, countryCode, status, attributeQuery, exactMatch);
 
-        // Parse general attribute query
-        Map<String, String> searchAttributes = ObjectUtils.isEmpty(attributeQuery)
-                ? new HashMap<>()
-                : new HashMap<>(SearchQueryUtils.getFields(attributeQuery));
+            String effectiveSearchQuery = !ObjectUtils.isEmpty(searchQuery) ? searchQuery : keyword;
+            firstResult = firstResult != null ? firstResult : 0;
+            maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
-        // Add mobileNumber, countryCode, and status to the map if provided
-        if (!ObjectUtils.isEmpty(mobileNumber)) {
-            searchAttributes.put("mobileNumber", mobileNumber);
+            if (!ObjectUtils.isEmpty(mobileNumber) && !MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
+                log.warn("Invalid mobile number format: {}", mobileNumber);
+                throw new BadRequestException("Invalid mobile number format");
+            }
+            if (!ObjectUtils.isEmpty(countryCode) && !COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
+                log.warn("Invalid country code format: {}", countryCode);
+                throw new BadRequestException("Invalid country code format");
+            }
+
+            Map<String, String> searchAttributes = new HashMap<>();
+            if (!ObjectUtils.isEmpty(attributeQuery)) {
+                searchAttributes.putAll(SearchQueryUtils.getFields(attributeQuery));
+            }
+            if (!ObjectUtils.isEmpty(mobileNumber)) {
+                searchAttributes.put("mobileNumber", mobileNumber);
+            }
+            if (!ObjectUtils.isEmpty(countryCode)) {
+                searchAttributes.put("countryCode", countryCode);
+            }
+            if (!ObjectUtils.isEmpty(status)) {
+                searchAttributes.put("status", status);
+            }
+            if (ObjectUtils.isNotEmpty(exactMatch)) {
+                searchAttributes.put("exactMatch", String.valueOf(exactMatch));
+            }
+
+            Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(realm, effectiveSearchQuery, searchAttributes,
+                    firstResult, maxResults);
+
+            Stream<TenantRepresentation> result = tenantStream
+                    .filter(tenant -> auth.isTenantsManager() || auth.isTenantMember(tenant))
+                    .map(ModelMapper::toRepresentation);
+
+            log.debug("Returning tenant stream for query: {}", effectiveSearchQuery);
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to list tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}", 
+                    searchQuery, keyword, mobileNumber, countryCode, e);
+            throw new jakarta.ws.rs.WebApplicationException("Failed to list tenants due to server error", 
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
-        if (!ObjectUtils.isEmpty(countryCode)) {
-            searchAttributes.put("countryCode", countryCode);
-        }
-        if (!ObjectUtils.isEmpty(status)) {
-            searchAttributes.put("status", status);
-        }
-
-        Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(realm, searchQuery, searchAttributes,
-                firstResult, maxResults);
-
-        return tenantStream
-                .filter(tenant -> auth.isTenantsManager() || auth.isTenantMember(tenant))
-                .map(ModelMapper::toRepresentation);
     }
 
     @Path("{tenantId}")
     public TenantResource getTenantResource(@PathParam("tenantId") String tenantId) {
-        TenantModel model = tenantProvider.getTenantById(realm, tenantId)
-                .orElseThrow(() -> new NotFoundException(String.format("%s not found", tenantId)));
-        if (auth.isTenantsManager() || auth.isTenantAdmin(model)) {
-            return new TenantResource(this, model);
-        } else {
-            throw new ForbiddenException(String.format("Insufficient permission to access %s", tenantId));
+        try {
+            log.debug("Fetching tenant resource for ID: {}", tenantId);
+            TenantModel model = tenantProvider.getTenantById(realm, tenantId)
+                    .orElseThrow(() -> {
+                        log.error("Tenant not found with ID: {}", tenantId);
+                        return new NotFoundException(String.format("Tenant %s not found", tenantId));
+                    });
+            if (auth.isTenantsManager() || auth.isTenantAdmin(model)) {
+                log.debug("Access granted for tenant ID: {}", tenantId);
+                return new TenantResource(this, model);
+            } else {
+                log.error("Insufficient permissions for tenant ID: {}", tenantId);
+                throw new ForbiddenException(String.format("Insufficient permission to access tenant %s", tenantId));
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch tenant with ID: {}", tenantId, e);
+            throw new jakarta.ws.rs.WebApplicationException("Failed to fetch tenant due to server error", 
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     private boolean isNullOrWhitespace(String str) {
-        return ObjectUtils.isEmpty(str) || ObjectUtils.isEmpty(str.trim());
+        return ObjectUtils.isEmpty(str) || str.trim().isEmpty();
+    }
+
+    private boolean isReservedAttribute(String key) {
+        return "mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key);
     }
 
     private void validateAttributes(Map<String, List<String>> attributes) {
         if (!ObjectUtils.isEmpty(attributes)) {
             attributes.forEach((key, values) -> {
-                if (ObjectUtils.isEmpty(key) || ObjectUtils.isEmpty(key.trim())) {
+                if (isNullOrWhitespace(key)) {
+                    log.error("Attribute name cannot be null or empty");
                     throw new BadRequestException("Attribute name cannot be null or empty");
                 }
-                if ("mobileNumber".equalsIgnoreCase(key) ||
-                    "countryCode".equalsIgnoreCase(key) ||
-                    "status".equalsIgnoreCase(key)) {
-                    throw new BadRequestException("Mobile number, country code, and status cannot be passed as generic attributes.");
+                if (isReservedAttribute(key)) {
+                    log.error("Reserved attribute used: {}", key);
+                    throw new BadRequestException("Mobile number, country code, and status cannot be passed as generic attributes");
                 }
                 if (ObjectUtils.isEmpty(values)) {
+                    log.error("Attribute values cannot be null or empty for key: {}", key);
                     throw new BadRequestException("Attribute values cannot be null or empty for key: " + key);
                 }
                 values.forEach(value -> {
-                    if (ObjectUtils.isEmpty(value) || ObjectUtils.isEmpty(value.trim())) {
+                    if (isNullOrWhitespace(value)) {
+                        log.error("Attribute value cannot be null or empty for key: {}", key);
                         throw new BadRequestException("Attribute value cannot be null or empty for key: " + key);
                     }
                 });
