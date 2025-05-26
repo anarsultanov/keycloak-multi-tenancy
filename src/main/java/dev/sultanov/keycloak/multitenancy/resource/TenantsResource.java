@@ -101,7 +101,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             }
 
             var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
-            if (!ObjectUtils.isEmpty(requiredRole) && !auth.hasAppRole(auth.getClient(), requiredRole)) {
+            if (ObjectUtils.isNotEmpty(requiredRole) && !auth.hasAppRole(auth.getClient(), requiredRole)) {
                 log.error("Missing required role for tenant creation: {}", requiredRole);
                 throw new ForbiddenException(String.format("Missing required role for tenant creation: %s", requiredRole));
             }
@@ -111,9 +111,9 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(),
                     request.getCountryCode(), request.getStatus(), auth.getUser());
 
-            if (!ObjectUtils.isEmpty(request.getAttributes())) {
+            if (ObjectUtils.isNotEmpty(request.getAttributes())) {
                 request.getAttributes().forEach((key, values) -> {
-                    if (!isReservedAttribute(key) && !ObjectUtils.isEmpty(values)) {
+                    if (!isReservedAttribute(key) && ObjectUtils.isNotEmpty(values)) {
                         model.setAttribute(key, values);
                     }
                 });
@@ -161,30 +161,30 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             log.debug("Listing tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}, status: {}, attributeQuery: {}, exactMatch: {}",
                     searchQuery, keyword, mobileNumber, countryCode, status, attributeQuery, exactMatch);
 
-            String effectiveSearchQuery = !ObjectUtils.isEmpty(searchQuery) ? searchQuery : keyword;
+            String effectiveSearchQuery = ObjectUtils.isNotEmpty(searchQuery) ? searchQuery : keyword;
             firstResult = firstResult != null ? firstResult : 0;
             maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
-            if (!ObjectUtils.isEmpty(mobileNumber) && !MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
+            if (ObjectUtils.isNotEmpty(mobileNumber) && !MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
                 log.warn("Invalid mobile number format: {}", mobileNumber);
                 throw new BadRequestException("Invalid mobile number format");
             }
-            if (!ObjectUtils.isEmpty(countryCode) && !COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
+            if (ObjectUtils.isNotEmpty(countryCode) && !COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
                 log.warn("Invalid country code format: {}", countryCode);
                 throw new BadRequestException("Invalid country code format");
             }
 
             Map<String, String> searchAttributes = new HashMap<>();
-            if (!ObjectUtils.isEmpty(attributeQuery)) {
+            if (ObjectUtils.isNotEmpty(attributeQuery)) {
                 searchAttributes.putAll(SearchQueryUtils.getFields(attributeQuery));
             }
-            if (!ObjectUtils.isEmpty(mobileNumber)) {
+            if (ObjectUtils.isNotEmpty(mobileNumber)) {
                 searchAttributes.put("mobileNumber", mobileNumber);
             }
-            if (!ObjectUtils.isEmpty(countryCode)) {
+            if (ObjectUtils.isNotEmpty(countryCode)) {
                 searchAttributes.put("countryCode", countryCode);
             }
-            if (!ObjectUtils.isEmpty(status)) {
+            if (ObjectUtils.isNotEmpty(status)) {
                 searchAttributes.put("status", status);
             }
             if (ObjectUtils.isNotEmpty(exactMatch)) {
@@ -240,7 +240,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     }
 
     private void validateAttributes(Map<String, List<String>> attributes) {
-        if (!ObjectUtils.isEmpty(attributes)) {
+        if (ObjectUtils.isNotEmpty(attributes)) {
             attributes.forEach((key, values) -> {
                 if (isNullOrWhitespace(key)) {
                     log.error("Attribute name cannot be null or empty");

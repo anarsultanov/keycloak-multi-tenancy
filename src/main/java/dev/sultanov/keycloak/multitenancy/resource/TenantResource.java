@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.ObjectUtils; // Import Apache Commons Lang ObjectUtils
+import org.apache.commons.lang3.StringUtils; // Import Apache Commons Lang StringUtils
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -57,19 +59,22 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response updateTenant(TenantRepresentation request) {
-        if (request.getName() != null && !request.getName().isEmpty()) {
+        // Using StringUtils.isNotEmpty() for String checks
+        if (StringUtils.isNotEmpty(request.getName())) {
             tenant.setName(request.getName());
         }
-        if (request.getMobileNumber() != null && !request.getMobileNumber().isEmpty()) {
+        if (StringUtils.isNotEmpty(request.getMobileNumber())) {
             tenant.setMobileNumber(request.getMobileNumber());
         }
-        if (request.getCountryCode() != null && !request.getCountryCode().isEmpty()) {
+        if (StringUtils.isNotEmpty(request.getCountryCode())) {
             tenant.setCountryCode(request.getCountryCode());
         }
-        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+        if (StringUtils.isNotEmpty(request.getStatus())) {
             tenant.setStatus(request.getStatus());
         }
-        if (request.getAttributes() != null) {
+        
+        // Using ObjectUtils.isNotEmpty() for Map check
+        if (ObjectUtils.isNotEmpty(request.getAttributes())) {
             Set<String> attrsToRemove = new HashSet<>(tenant.getAttributes().keySet());
             attrsToRemove.removeAll(request.getAttributes().keySet());
             for (Map.Entry<String, List<String>> attr : request.getAttributes().entrySet()) {

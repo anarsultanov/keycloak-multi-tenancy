@@ -213,7 +213,7 @@ public class JpaTenantProvider implements TenantProvider {
 
             // Handle generic attributes
             Join<TenantEntity, TenantAttributeEntity> attributeJoin = null;
-            if (attributes != null) {
+            if (ObjectUtils.isNotEmpty(attributes)) {
                 for (Map.Entry<String, String> entry : attributes.entrySet()) {
                     String key = entry.getKey();
                     if ("mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key) || "exactMatch".equalsIgnoreCase(key)) {
@@ -227,7 +227,7 @@ public class JpaTenantProvider implements TenantProvider {
                         continue;
                     }
 
-                    if (attributeJoin == null) {
+                    if (ObjectUtils.isNotEmpty(attributeJoin)) {
                         attributeJoin = root.join("attributes");
                     }
                     Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
