@@ -1,7 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -54,7 +52,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public TenantModel createTenant(RealmModel realm, String tenantName, String mobileNumber, String countryCode, String status, UserModel user) {
-
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<TenantEntity> root = query.from(TenantEntity.class);
@@ -110,186 +107,160 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Optional<TenantModel> getTenantById(RealmModel realm, String id) {
-        try {
-            TenantEntity entity = em.find(TenantEntity.class, id);
-            if (ObjectUtils.isNotEmpty(entity) && entity.getRealmId().equals(realm.getId())) {
-                return Optional.of(new TenantAdapter(session, realm, em, entity));
-            }
-            log.debug("No tenant found for ID {} in realm {}", id, realm.getId());
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Error querying tenant by ID {}", id, e);
-            throw new RuntimeException("Database error while fetching tenant", e);
+        TenantEntity entity = em.find(TenantEntity.class, id);
+        if (ObjectUtils.isNotEmpty(entity) && entity.getRealmId().equals(realm.getId())) {
+            return Optional.of(new TenantAdapter(session, realm, em, entity));
         }
+        log.debug("No tenant found for ID {} in realm {}", id, realm.getId());
+        return Optional.empty();
     }
 
     @Override
     public Stream<TenantModel> getTenantsStream(RealmModel realm) {
-        try {
-            TypedQuery<TenantEntity> query = em.createNamedQuery("getTenantsByRealmId", TenantEntity.class);
-            query.setParameter("realmId", realm.getId());
-            return closing(query.getResultStream().map(t -> new TenantAdapter(session, realm, em, t)));
-        } catch (Exception e) {
-            log.error("Error fetching all tenants for realm {}", realm.getId(), e);
-            throw new RuntimeException("Database error while fetching tenants", e);
-        }
+        TypedQuery<TenantEntity> query = em.createNamedQuery("getTenantsByRealmId", TenantEntity.class);
+        query.setParameter("realmId", realm.getId());
+        return query.getResultStream().map(t -> new TenantAdapter(session, realm, em, t));
     }
 
     @Override
     public Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaQuery<TenantEntity> queryBuilder = builder.createQuery(TenantEntity.class);
-            Root<TenantEntity> root = queryBuilder.from(TenantEntity.class);
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<TenantEntity> queryBuilder = builder.createQuery(TenantEntity.class);
+        Root<TenantEntity> root = queryBuilder.from(TenantEntity.class);
 
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
-            // Search by tenant name (exact or partial match based on exactMatch attribute)
-            String exactMatch = attributes != null ? attributes.get("exactMatch") : null;
-            boolean isExactMatch = "true".equalsIgnoreCase(exactMatch);
-            if (!ObjectUtils.isEmpty(name)) {
-                String trimmedName = name.trim();
-                log.debug("Applying name filter: {}, exactMatch: {}", trimmedName, isExactMatch);
-                Predicate namePredicate;
-                if (isExactMatch || trimmedName.length() < 3) {
-                    namePredicate = builder.equal(builder.lower(root.get("name")), trimmedName.toLowerCase());
-                } else {
-                    namePredicate = builder.like(builder.lower(root.get("name")), "%" + trimmedName.toLowerCase() + "%");
-                }
-                Predicate idPredicate = builder.equal(root.get("id"), trimmedName);
-                predicates.add(builder.or(namePredicate, idPredicate));
+        String exactMatch = attributes != null ? attributes.get("exactMatch") : null;
+        boolean isExactMatch = "true".equalsIgnoreCase(exactMatch);
+        if (!ObjectUtils.isEmpty(name)) {
+            String trimmedName = name.trim();
+            Predicate namePredicate;
+            if (isExactMatch || trimmedName.length() < 3) {
+                namePredicate = builder.equal(builder.lower(root.get("name")), trimmedName.toLowerCase());
+            } else {
+                namePredicate = builder.like(builder.lower(root.get("name")), "%" + trimmedName.toLowerCase() + "%");
             }
-
-            // Search by mobile number (exact match)
-            String mobileNumber = attributes != null ? attributes.get("mobileNumber") : null;
-            if (!ObjectUtils.isEmpty(mobileNumber)) {
-                if (!MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
-                    log.warn("Invalid mobile number format in query: {}", mobileNumber);
-                    return Stream.empty();
-                }
-                predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
-            }
-
-            // Search by country code (exact match)
-            String countryCode = attributes != null ? attributes.get("countryCode") : null;
-            if (!ObjectUtils.isEmpty(countryCode)) {
-                if (!COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
-                    log.warn("Invalid country code format in query: {}", countryCode);
-                    return Stream.empty();
-                }
-                predicates.add(builder.equal(root.get("countryCode"), countryCode));
-            }
-
-            // Search by status (exact match)
-            String status = attributes != null ? attributes.get("status") : null;
-            if (!ObjectUtils.isEmpty(status)) {
-                predicates.add(builder.equal(root.get("status"), status));
-            }
-
-            // Handle generic attributes
-            Join<TenantEntity, TenantAttributeEntity> attributeJoin = null;
-            if (ObjectUtils.isNotEmpty(attributes)) {
-                for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                    String key = entry.getKey();
-                    if ("mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key) || "exactMatch".equalsIgnoreCase(key)) {
-                        continue;
-                    }
-                    if (ObjectUtils.isEmpty(key)) {
-                        continue;
-                    }
-                    String value = entry.getValue();
-                    if (ObjectUtils.isEmpty(value)) {
-                        continue;
-                    }
-
-                    if (ObjectUtils.isNotEmpty(attributeJoin)) {
-                        attributeJoin = root.join("attributes");
-                    }
-                    Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
-                    Predicate attrValuePredicate = builder.like(builder.lower(attributeJoin.get("value")), "%" + value.toLowerCase() + "%");
-                    predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
-                }
-            }
-
-            Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
-            log.debug("Executing query with predicates: {}", predicates);
-            queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
-            TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
-            Stream<TenantModel> resultStream = closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                    .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
-            log.debug("Query returned stream with results");
-            return resultStream;
-        } catch (Exception e) {
-            log.error("Error querying tenants with name: {}, attributes: {}, first: {}, max: {}", 
-                    name, attributes, firstResult, maxResults, e);
-            throw new RuntimeException("Database error while querying tenants", e);
+            Predicate idPredicate = builder.equal(root.get("id"), trimmedName);
+            predicates.add(builder.or(namePredicate, idPredicate));
         }
+
+        String mobileNumber = attributes != null ? attributes.get("mobileNumber") : null;
+        if (!ObjectUtils.isEmpty(mobileNumber)) {
+            if (!MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
+                log.warn("Invalid mobile number format in query: {}", mobileNumber);
+                return Stream.empty();
+            }
+            predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
+        }
+
+        String countryCode = attributes != null ? attributes.get("countryCode") : null;
+        if (!ObjectUtils.isEmpty(countryCode)) {
+            if (!COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
+                log.warn("Invalid country code format in query: {}", countryCode);
+                return Stream.empty();
+            }
+            predicates.add(builder.equal(root.get("countryCode"), countryCode));
+        }
+
+        String status = attributes != null ? attributes.get("status") : null;
+        if (!ObjectUtils.isEmpty(status)) {
+            predicates.add(builder.equal(root.get("status"), status));
+        }
+
+        Join<TenantEntity, TenantAttributeEntity> attributeJoin = null;
+        if (ObjectUtils.isNotEmpty(attributes)) {
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                String key = entry.getKey();
+                if ("mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key) || "exactMatch".equalsIgnoreCase(key)) {
+                    continue;
+                }
+                if (ObjectUtils.isEmpty(key)) {
+                    continue;
+                }
+                String value = entry.getValue();
+                if (ObjectUtils.isEmpty(value)) {
+                    continue;
+                }
+                if (attributeJoin == null) {
+                    attributeJoin = root.join("attributes");
+                }
+                Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
+                Predicate attrValuePredicate = builder.like(builder.lower(attributeJoin.get("value")), "%" + value.toLowerCase() + "%");
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+            }
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
+        TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
+        return paginateQuery(query, firstResult, maxResults)
+                .getResultStream()
+                .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
 
     @Override
     public Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        try {
-            boolean longValue = attrValue.length() > 255;
-            TypedQuery<TenantEntity> query = longValue ?
-                    em.createNamedQuery("getTenantsByAttributeNameAndLongValue", TenantEntity.class)
-                            .setParameter("realmId", realm.getId())
-                            .setParameter("name", attrName)
-                            .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(attrValue)) :
-                    em.createNamedQuery("getTenantsByAttributeNameAndValue", TenantEntity.class)
-                            .setParameter("realmId", realm.getId())
-                            .setParameter("name", attrName)
-                            .setParameter("value", attrValue);
+        boolean longValue = attrValue.length() > 255;
+        TypedQuery<TenantEntity> query = longValue ?
+                em.createNamedQuery("getTenantsByAttributeNameAndLongValue", TenantEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(attrValue)) :
+                em.createNamedQuery("getTenantsByAttributeNameAndValue", TenantEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("value", attrValue);
 
-            return closing(query.getResultStream().map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity)));
-        } catch (Exception e) {
-            log.error("Error querying tenants by attribute {}: {}", attrName, attrValue, e);
-            throw new RuntimeException("Database error while querying tenants by attribute", e);
-        }
+        return query.getResultStream().map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
 
     @Override
     public boolean deleteTenant(RealmModel realm, String id) {
-        try {
-            getTenantById(realm, id).ifPresent(tenant -> {
-                var entity = em.find(TenantEntity.class, id);
-                em.remove(entity);
-                em.flush();
-                session.getKeycloakSessionFactory().publish(tenantDeletedEvent(realm, tenant));
-            });
-            return true;
-        } catch (Exception e) {
-            log.error("Error deleting tenant with ID {}", id, e);
-            throw new RuntimeException("Database error while deleting tenant", e);
-        }
+        getTenantById(realm, id).ifPresent(tenant -> {
+            var entity = em.find(TenantEntity.class, id);
+            em.remove(entity);
+            em.flush();
+            session.getKeycloakSessionFactory().publish(tenantDeletedEvent(realm, tenant));
+        });
+        return true;
     }
 
     @Override
     public Stream<TenantInvitationModel> getTenantInvitationsStream(RealmModel realm, UserModel user) {
-        try {
-            TypedQuery<TenantInvitationEntity> query = em.createNamedQuery("getInvitationsByRealmAndEmail", TenantInvitationEntity.class);
-            query.setParameter("realmId", realm.getId());
-            query.setParameter("search", user.getEmail());
-            return closing(query.getResultStream().map(i -> new TenantInvitationAdapter(session, realm, em, i)));
-        } catch (Exception e) {
-            log.error("Error fetching invitations for user {} in realm {}", user.getEmail(), realm.getId(), e);
-            throw new RuntimeException("Database error while fetching invitations", e);
-        }
+        TypedQuery<TenantInvitationEntity> query = em.createNamedQuery("getInvitationsByRealmAndEmail", TenantInvitationEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("search", user.getEmail());
+        return query.getResultStream().map(i -> new TenantInvitationAdapter(session, realm, em, i));
     }
 
     @Override
     public Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user) {
-        try {
-            TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmIdAndUserId", TenantMembershipEntity.class);
-            query.setParameter("realmId", realm.getId());
-            query.setParameter("userId", user.getId());
-            return closing(query.getResultStream().map(m -> new TenantMembershipAdapter(session, realm, em, m)));
-        } catch (Exception e) {
-            log.error("Error fetching memberships for user {} in realm {}", user.getId(), realm.getId(), e);
-            throw new RuntimeException("Database error while fetching memberships", e);
-        }
+    
+        TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmIdAndUserId", TenantMembershipEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("userId", user.getId());
+        return query.getResultStream().map(m -> new TenantMembershipAdapter(session, realm, em, m));
     }
+    
+    @Override
+    public Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user) {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
+            Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
+            Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
 
+            Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
+            Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId());
+
+            query.select(root).where(cb.and(realmMatch, userMatch));
+
+            return em.createQuery(query)
+                     .getResultStream()
+                     .map(TenantMembershipEntity::getTenant)
+                     .map(entity -> new TenantAdapter(session, realm, em, entity));
+    }
+    
     public TenantModel.TenantCreatedEvent tenantCreatedEvent(RealmModel realm, TenantModel tenant) {
         return new TenantModel.TenantCreatedEvent() {
             @Override
@@ -328,30 +299,10 @@ public class JpaTenantProvider implements TenantProvider {
         };
     }
 
-    @Override
-    public Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user) {
-        try {
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
-            Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
-            Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
-
-            Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
-            Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId());
-
-            query.select(root).where(cb.and(realmMatch, userMatch));
-
-            return closing(em.createQuery(query).getResultStream()
-                    .map(TenantMembershipEntity::getTenant)
-                    .map(entity -> new TenantAdapter(session, realm, em, entity)));
-        } catch (Exception e) {
-            log.error("Error fetching user tenants for user {} in realm {}", user.getId(), realm.getId(), e);
-            throw new RuntimeException("Database error while fetching user tenants", e);
-        }
-    }
-
-    @Override
-    public void close() {
-        // Clean up if necessary
-    }
+	@Override
+	public void close() {
+		// TODO Auto-generated method stub
+		
+	}
+    
 }
