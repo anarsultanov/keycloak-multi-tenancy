@@ -54,18 +54,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public TenantModel createTenant(RealmModel realm, String tenantName, String mobileNumber, String countryCode, String status, UserModel user) {
-        if (ObjectUtils.isEmpty(tenantName) || tenantName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Tenant name cannot be null or empty.");
-        }
-        if (ObjectUtils.isEmpty(mobileNumber) || !MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
-            throw new IllegalArgumentException("Invalid mobile number format.");
-        }
-        if (ObjectUtils.isEmpty(countryCode) || !COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
-            throw new IllegalArgumentException("Country code must be a valid numeric code (e.g., 91, 1, 23).");
-        }
-        if (ObjectUtils.isEmpty(status) || status.trim().isEmpty()) {
-            throw new IllegalArgumentException("Status is required.");
-        }
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -101,14 +89,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Optional<TenantModel> getTenantByMobileNumberAndCountryCode(RealmModel realm, String mobileNumber, String countryCode) {
-        if (ObjectUtils.isEmpty(mobileNumber) || ObjectUtils.isEmpty(countryCode)) {
-            log.debug("Empty mobile number or country code provided");
-            return Optional.empty();
-        }
-        if (!MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches() || !COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
-            log.debug("Invalid mobile number {} or country code {}", mobileNumber, countryCode);
-            return Optional.empty();
-        }
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<TenantEntity> query = cb.createQuery(TenantEntity.class);
@@ -130,10 +110,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Optional<TenantModel> getTenantById(RealmModel realm, String id) {
-        if (ObjectUtils.isEmpty(id)) {
-            log.debug("Empty tenant ID provided");
-            return Optional.empty();
-        }
         try {
             TenantEntity entity = em.find(TenantEntity.class, id);
             if (ObjectUtils.isNotEmpty(entity) && entity.getRealmId().equals(realm.getId())) {
@@ -253,10 +229,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        if (ObjectUtils.isEmpty(attrName) || ObjectUtils.isEmpty(attrValue)) {
-            log.debug("Empty attribute name or value provided");
-            return Stream.empty();
-        }
         try {
             boolean longValue = attrValue.length() > 255;
             TypedQuery<TenantEntity> query = longValue ?
