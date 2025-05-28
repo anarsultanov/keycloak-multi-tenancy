@@ -42,8 +42,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     private final KeycloakSession session;
     private final EntityManager em;
-    private static final Pattern MOBILE_NUMBER_PATTERN = Pattern.compile("^[+]?[0-9]{7,15}$");
-    private static final Pattern COUNTRY_CODE_PATTERN = Pattern.compile("^[0-9]{1,3}$");
 
     public JpaTenantProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
@@ -147,19 +145,11 @@ public class JpaTenantProvider implements TenantProvider {
 
         String mobileNumber = attributes != null ? attributes.get("mobileNumber") : null;
         if (!ObjectUtils.isEmpty(mobileNumber)) {
-            if (!MOBILE_NUMBER_PATTERN.matcher(mobileNumber).matches()) {
-                log.warn("Invalid mobile number format in query: {}", mobileNumber);
-                return Stream.empty();
-            }
             predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
         }
 
         String countryCode = attributes != null ? attributes.get("countryCode") : null;
         if (!ObjectUtils.isEmpty(countryCode)) {
-            if (!COUNTRY_CODE_PATTERN.matcher(countryCode).matches()) {
-                log.warn("Invalid country code format in query: {}", countryCode);
-                return Stream.empty();
-            }
             predicates.add(builder.equal(root.get("countryCode"), countryCode));
         }
 
@@ -198,6 +188,7 @@ public class JpaTenantProvider implements TenantProvider {
                 .getResultStream()
                 .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
+
 
     @Override
     public Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue) {
