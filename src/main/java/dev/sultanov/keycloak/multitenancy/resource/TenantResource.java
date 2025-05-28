@@ -59,7 +59,6 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response updateTenant(TenantRepresentation request) {
-        // Using StringUtils.isNotEmpty() for String checks
         if (StringUtils.isNotEmpty(request.getName())) {
             tenant.setName(request.getName());
         }
@@ -72,18 +71,13 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
         if (StringUtils.isNotEmpty(request.getStatus())) {
             tenant.setStatus(request.getStatus());
         }
-        
-        // Using ObjectUtils.isNotEmpty() for Map check
+
         if (ObjectUtils.isNotEmpty(request.getAttributes())) {
             Set<String> attrsToRemove = new HashSet<>(tenant.getAttributes().keySet());
             attrsToRemove.removeAll(request.getAttributes().keySet());
+
             for (Map.Entry<String, List<String>> attr : request.getAttributes().entrySet()) {
-                // Skip reserved fields
-                if (!"mobileNumber".equalsIgnoreCase(attr.getKey()) &&
-                    !"countryCode".equalsIgnoreCase(attr.getKey()) &&
-                    !"status".equalsIgnoreCase(attr.getKey())) {
-                    tenant.setAttribute(attr.getKey(), attr.getValue());
-                }
+                tenant.setAttribute(attr.getKey(), attr.getValue());
             }
             for (String attr : attrsToRemove) {
                 tenant.removeAttribute(attr);
@@ -97,6 +91,7 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
         return Response.noContent().build();
     }
+
 
     @DELETE
     @Operation(operationId = "deleteTenant", summary = "Delete tenant")

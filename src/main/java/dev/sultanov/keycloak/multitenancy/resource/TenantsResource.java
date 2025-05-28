@@ -107,7 +107,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             }
 
             validateAttributes(request.getAttributes());
-
+            
             TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(),
                     request.getCountryCode(), request.getStatus(), auth.getUser());
 
@@ -157,7 +157,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             @Parameter(description = "Require exact name match") @QueryParam("exactMatch") Boolean exactMatch,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
             @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
-        try {
             log.debug("Listing tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}, status: {}, attributeQuery: {}, exactMatch: {}",
                     searchQuery, keyword, mobileNumber, countryCode, status, attributeQuery, exactMatch);
 
@@ -200,17 +199,10 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
             log.debug("Returning tenant stream for query: {}", effectiveSearchQuery);
             return result;
-        } catch (Exception e) {
-            log.error("Failed to list tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}", 
-                    searchQuery, keyword, mobileNumber, countryCode, e);
-            throw new jakarta.ws.rs.WebApplicationException("Failed to list tenants due to server error", 
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
     }
 
     @Path("{tenantId}")
     public TenantResource getTenantResource(@PathParam("tenantId") String tenantId) {
-        try {
             log.debug("Fetching tenant resource for ID: {}", tenantId);
             TenantModel model = tenantProvider.getTenantById(realm, tenantId)
                     .orElseThrow(() -> {
@@ -224,11 +216,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 log.error("Insufficient permissions for tenant ID: {}", tenantId);
                 throw new ForbiddenException(String.format("Insufficient permission to access tenant %s", tenantId));
             }
-        } catch (Exception e) {
-            log.error("Failed to fetch tenant with ID: {}", tenantId, e);
-            throw new jakarta.ws.rs.WebApplicationException("Failed to fetch tenant due to server error", 
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
     }
 
     private boolean isNullOrWhitespace(String str) {
@@ -245,21 +232,7 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 if (isNullOrWhitespace(key)) {
                     log.error("Attribute name cannot be null or empty");
                     throw new BadRequestException("Attribute name cannot be null or empty");
-                }
-                if (isReservedAttribute(key)) {
-                    log.error("Reserved attribute used: {}", key);
-                    throw new BadRequestException("Mobile number, country code, and status cannot be passed as generic attributes");
-                }
-                if (ObjectUtils.isEmpty(values)) {
-                    log.error("Attribute values cannot be null or empty for key: {}", key);
-                    throw new BadRequestException("Attribute values cannot be null or empty for key: " + key);
-                }
-                values.forEach(value -> {
-                    if (isNullOrWhitespace(value)) {
-                        log.error("Attribute value cannot be null or empty for key: {}", key);
-                        throw new BadRequestException("Attribute value cannot be null or empty for key: " + key);
-                    }
-                });
+                };
             });
         }
     }
