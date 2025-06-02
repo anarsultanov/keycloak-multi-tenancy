@@ -1,13 +1,10 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -16,19 +13,16 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.jpa.JpaHashUtils;
 
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
-import dev.sultanov.keycloak.multitenancy.model.entity.TenantAttributeEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -83,27 +77,6 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public Optional<TenantModel> getTenantByMobileNumberAndCountryCode(RealmModel realm, String mobileNumber, String countryCode) {
-        try {
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<TenantEntity> query = cb.createQuery(TenantEntity.class);
-            Root<TenantEntity> root = query.from(TenantEntity.class);
-            Predicate realmPredicate = cb.equal(root.get("realmId"), realm.getId());
-            Predicate mobilePredicate = cb.equal(root.get("mobileNumber"), mobileNumber);
-            Predicate countryCodePredicate = cb.equal(root.get("countryCode"), countryCode);
-            query.select(root).where(cb.and(realmPredicate, mobilePredicate, countryCodePredicate));
-            TenantEntity result = em.createQuery(query).getSingleResult();
-            return Optional.of(new TenantAdapter(session, realm, em, result));
-        } catch (NoResultException e) {
-            log.debug("No tenant found for mobile number {} and country code {}", mobileNumber, countryCode);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Error querying tenant by mobile number {} and country code {}", mobileNumber, countryCode, e);
-            throw new RuntimeException("Database error while fetching tenant", e);
-        }
-    }
-
-    @Override
     public Optional<TenantModel> getTenantById(RealmModel realm, String id) {
         TenantEntity entity = em.find(TenantEntity.class, id);
         if (ObjectUtils.isNotEmpty(entity) && entity.getRealmId().equals(realm.getId())) {
@@ -111,13 +84,6 @@ public class JpaTenantProvider implements TenantProvider {
         }
         log.debug("No tenant found for ID {} in realm {}", id, realm.getId());
         return Optional.empty();
-    }
-
-    @Override
-    public Stream<TenantModel> getTenantsStream(RealmModel realm) {
-        TypedQuery<TenantEntity> query = em.createNamedQuery("getTenantsByRealmId", TenantEntity.class);
-        query.setParameter("realmId", realm.getId());
-        return query.getResultStream().map(t -> new TenantAdapter(session, realm, em, t));
     }
 
     @Override
@@ -157,25 +123,8 @@ public class JpaTenantProvider implements TenantProvider {
         queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
 
         TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
-        // No pagination here, get all results
         return query.getResultStream()
                     .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
-    }
-
-    @Override
-    public Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        boolean longValue = attrValue.length() > 255;
-        TypedQuery<TenantEntity> query = longValue ?
-                em.createNamedQuery("getTenantsByAttributeNameAndLongValue", TenantEntity.class)
-                        .setParameter("realmId", realm.getId())
-                        .setParameter("name", attrName)
-                        .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(attrValue)) :
-                em.createNamedQuery("getTenantsByAttributeNameAndValue", TenantEntity.class)
-                        .setParameter("realmId", realm.getId())
-                        .setParameter("name", attrName)
-                        .setParameter("value", attrValue);
-
-        return query.getResultStream().map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
 
     @Override
@@ -199,7 +148,6 @@ public class JpaTenantProvider implements TenantProvider {
 
     @Override
     public Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user) {
-    
         TypedQuery<TenantMembershipEntity> query = em.createNamedQuery("getMembershipsByRealmIdAndUserId", TenantMembershipEntity.class);
         query.setParameter("realmId", realm.getId());
         query.setParameter("userId", user.getId());
@@ -208,20 +156,20 @@ public class JpaTenantProvider implements TenantProvider {
     
     @Override
     public Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user) {
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
-            Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
-            Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
+        Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
+        Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
 
-            Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
-            Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId());
+        Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
+        Predicate userMatch = cb.equal(root.get("user").get("id"), user.getId());
 
-            query.select(root).where(cb.and(realmMatch, userMatch));
+        query.select(root).where(cb.and(realmMatch, userMatch));
 
-            return em.createQuery(query)
-                     .getResultStream()
-                     .map(TenantMembershipEntity::getTenant)
-                     .map(entity -> new TenantAdapter(session, realm, em, entity));
+        return em.createQuery(query)
+                 .getResultStream()
+                 .map(TenantMembershipEntity::getTenant)
+                 .map(entity -> new TenantAdapter(session, realm, em, entity));
     }
     
     public TenantModel.TenantCreatedEvent tenantCreatedEvent(RealmModel realm, TenantModel tenant) {
@@ -262,10 +210,8 @@ public class JpaTenantProvider implements TenantProvider {
         };
     }
 
-	@Override
-	public void close() {
-		// TODO Auto-generated method stub
-		
-	}
-    
+    @Override
+    public void close() {
+        // TODO Auto-generated method stub
+    }
 }

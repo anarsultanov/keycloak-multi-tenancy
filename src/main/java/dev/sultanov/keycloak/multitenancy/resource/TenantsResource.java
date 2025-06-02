@@ -77,7 +77,10 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             throw new BadRequestException("Status is required");
         }
 
-        if (tenantProvider.getTenantByMobileNumberAndCountryCode(realm, request.getMobileNumber(), request.getCountryCode()).isPresent()) {
+        // Check for existing tenant with mobile number and country code
+        if (tenantProvider.getTenantsStream(realm, null, Map.of(), request.getMobileNumber(), request.getCountryCode())
+                .findAny()
+                .isPresent()) {
             log.error("Tenant with mobile number {} and country code {} already exists",
                     request.getMobileNumber(), request.getCountryCode());
             throw new WebApplicationException("Tenant with this mobile number and country code already exists", Response.Status.CONFLICT);
@@ -113,7 +116,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 .entity(response)
                 .build();
     }
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

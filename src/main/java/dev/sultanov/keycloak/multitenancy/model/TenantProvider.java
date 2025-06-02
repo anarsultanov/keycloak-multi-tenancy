@@ -13,11 +13,7 @@ public interface TenantProvider extends Provider {
 
     Optional<TenantModel> getTenantById(RealmModel realm, String id);
 
-    Stream<TenantModel> getTenantsStream(RealmModel realm);
-
     Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrIdQuery, Map<String, String> attributes, String mobileNumber, String countryCode);
-
-    Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue);
 
     boolean deleteTenant(RealmModel realm, String id);
 
@@ -27,5 +23,4 @@ public interface TenantProvider extends Provider {
 
     Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user);
 
-	Optional<TenantModel> getTenantByMobileNumberAndCountryCode(RealmModel realm, String mobileNumber, String countryCode);
 }
