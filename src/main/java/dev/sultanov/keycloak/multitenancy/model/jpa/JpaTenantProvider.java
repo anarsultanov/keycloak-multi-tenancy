@@ -158,29 +158,6 @@ public class JpaTenantProvider implements TenantProvider {
             predicates.add(builder.equal(root.get("status"), status));
         }
 
-        Join<TenantEntity, TenantAttributeEntity> attributeJoin = null;
-        if (ObjectUtils.isNotEmpty(attributes)) {
-            for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                String key = entry.getKey();
-                if ("mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key) || "exactMatch".equalsIgnoreCase(key)) {
-                    continue;
-                }
-                if (ObjectUtils.isEmpty(key)) {
-                    continue;
-                }
-                String value = entry.getValue();
-                if (ObjectUtils.isEmpty(value)) {
-                    continue;
-                }
-                if (attributeJoin == null) {
-                    attributeJoin = root.join("attributes");
-                }
-                Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
-                Predicate attrValuePredicate = builder.like(builder.lower(attributeJoin.get("value")), "%" + value.toLowerCase() + "%");
-                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
-            }
-        }
-
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
         queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
         TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
