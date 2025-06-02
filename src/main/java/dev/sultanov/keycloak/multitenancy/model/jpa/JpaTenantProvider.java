@@ -121,7 +121,8 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+    public Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrIdQuery, Map<String, String> attributes, 
+                                                String mobileNumber, String countryCode) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<TenantEntity> queryBuilder = builder.createQuery(TenantEntity.class);
         Root<TenantEntity> root = queryBuilder.from(TenantEntity.class);
@@ -131,8 +132,9 @@ public class JpaTenantProvider implements TenantProvider {
 
         String exactMatch = attributes != null ? attributes.get("exactMatch") : null;
         boolean isExactMatch = "true".equalsIgnoreCase(exactMatch);
-        if (!ObjectUtils.isEmpty(name)) {
-            String trimmedName = name.trim();
+
+        if (!ObjectUtils.isEmpty(nameOrIdQuery)) {
+            String trimmedName = nameOrIdQuery.trim();
             Predicate namePredicate;
             if (isExactMatch || trimmedName.length() < 3) {
                 namePredicate = builder.equal(builder.lower(root.get("name")), trimmedName.toLowerCase());
@@ -143,29 +145,22 @@ public class JpaTenantProvider implements TenantProvider {
             predicates.add(builder.or(namePredicate, idPredicate));
         }
 
-        String mobileNumber = attributes != null ? attributes.get("mobileNumber") : null;
         if (!ObjectUtils.isEmpty(mobileNumber)) {
             predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
         }
 
-        String countryCode = attributes != null ? attributes.get("countryCode") : null;
         if (!ObjectUtils.isEmpty(countryCode)) {
             predicates.add(builder.equal(root.get("countryCode"), countryCode));
         }
 
-        String status = attributes != null ? attributes.get("status") : null;
-        if (!ObjectUtils.isEmpty(status)) {
-            predicates.add(builder.equal(root.get("status"), status));
-        }
-
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
         queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
-        TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
-        return paginateQuery(query, firstResult, maxResults)
-                .getResultStream()
-                .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
-    }
 
+        TypedQuery<TenantEntity> query = em.createQuery(queryBuilder);
+        // No pagination here, get all results
+        return query.getResultStream()
+                    .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
+    }
 
     @Override
     public Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue) {

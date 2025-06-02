@@ -24,11 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.SearchQueryUtils;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -87,22 +83,20 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             throw new WebApplicationException("Tenant with this mobile number and country code already exists", Response.Status.CONFLICT);
         }
 
-        var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
-        if (ObjectUtils.isNotEmpty(requiredRole) && !auth.hasAppRole(auth.getClient(), requiredRole)) {
-            log.error("Missing required role for tenant creation: {}", requiredRole);
-            throw new ForbiddenException(String.format("Missing required role for tenant creation: %s", requiredRole));
-        }
-
         validateAttributes(request.getAttributes());
-        
-        TenantModel model = tenantProvider.createTenant(realm, request.getName(), request.getMobileNumber(),
-                request.getCountryCode(), request.getStatus(), auth.getUser());
+
+        TenantModel model = tenantProvider.createTenant(
+                realm,
+                request.getName(),
+                request.getMobileNumber(),
+                request.getCountryCode(),
+                request.getStatus(),
+                auth.getUser()
+        );
 
         if (ObjectUtils.isNotEmpty(request.getAttributes())) {
             request.getAttributes().forEach((key, values) -> {
-                if (!isReservedAttribute(key) && ObjectUtils.isNotEmpty(values)) {
-                    model.setAttribute(key, values);
-                }
+                model.setAttribute(key, values);
             });
         }
 
@@ -114,10 +108,12 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
                 .success();
 
         log.info("Tenant created successfully: {}", response.getName());
+
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(response.getId()).build())
                 .entity(response)
                 .build();
     }
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -129,47 +125,24 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Stream<TenantRepresentation> listTenants(
-            @Parameter(description = "Tenant name or ID search keyword (partial match for name, exact for ID)") @QueryParam("search") String searchQuery,
-            @Parameter(description = "Tenant name or ID search keyword (alternative)") @QueryParam("keyword") String keyword,
             @Parameter(description = "Tenant mobile number (exact match)") @QueryParam("mobileNumber") String mobileNumber,
-            @Parameter(description = "Tenant country code (exact match, e.g., 91)") @QueryParam("countryCode") String countryCode,
-            @Parameter(description = "Tenant status (exact match)") @QueryParam("status") String status,
-            @Parameter(description = "Tenant attribute query (e.g., q=city:London)") @QueryParam("q") String attributeQuery,
-            @Parameter(description = "Require exact name match") @QueryParam("exactMatch") Boolean exactMatch,
-            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
-            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
-        log.debug("Listing tenants with search: {}, keyword: {}, mobileNumber: {}, countryCode: {}, status: {}, attributeQuery: {}, exactMatch: {}",
-                searchQuery, keyword, mobileNumber, countryCode, status, attributeQuery, exactMatch);
+            @Parameter(description = "Tenant country code (exact match, e.g., 91)") @QueryParam("countryCode") String countryCode) {
 
-        String effectiveSearchQuery = ObjectUtils.isNotEmpty(searchQuery) ? searchQuery : keyword;
-        firstResult = firstResult != null ? firstResult : 0;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        log.debug("Listing tenants with mobileNumber: {}, countryCode: {}", mobileNumber, countryCode);
 
-        Map<String, String> searchAttributes = new HashMap<>();
-        if (ObjectUtils.isNotEmpty(attributeQuery)) {
-            searchAttributes.putAll(SearchQueryUtils.getFields(attributeQuery));
-        }
-        if (ObjectUtils.isNotEmpty(mobileNumber)) {
-            searchAttributes.put("mobileNumber", mobileNumber);
-        }
-        if (ObjectUtils.isNotEmpty(countryCode)) {
-            searchAttributes.put("countryCode", countryCode);
-        }
-        if (ObjectUtils.isNotEmpty(status)) {
-            searchAttributes.put("status", status);
-        }
-        if (ObjectUtils.isNotEmpty(exactMatch)) {
-            searchAttributes.put("exactMatch", String.valueOf(exactMatch));
-        }
-
-        Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(realm, effectiveSearchQuery, searchAttributes,
-                firstResult, maxResults);
+        Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(
+                realm,
+                null,     
+                Map.of(),
+                mobileNumber,
+                countryCode
+        );
 
         Stream<TenantRepresentation> result = tenantStream
                 .filter(tenant -> auth.isTenantsManager() || auth.isTenantMember(tenant))
                 .map(ModelMapper::toRepresentation);
 
-        log.debug("Returning tenant stream for query: {}", effectiveSearchQuery);
+        log.debug("Returning tenant stream for mobileNumber: {}, countryCode: {}", mobileNumber, countryCode);
         return result;
     }
 
@@ -198,10 +171,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     private boolean isNullOrWhitespace(String str) {
         return ObjectUtils.isEmpty(str) || str.trim().isEmpty();
-    }
-
-    private boolean isReservedAttribute(String key) {
-        return "mobileNumber".equalsIgnoreCase(key) || "countryCode".equalsIgnoreCase(key) || "status".equalsIgnoreCase(key);
     }
 
     private void validateAttributes(Map<String, List<String>> attributes) {

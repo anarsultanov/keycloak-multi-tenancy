@@ -15,7 +15,7 @@ public interface TenantProvider extends Provider {
 
     Stream<TenantModel> getTenantsStream(RealmModel realm);
 
-    Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+    Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrIdQuery, Map<String, String> attributes, String mobileNumber, String countryCode);
 
     Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue);
 
