@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -17,7 +16,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "TENANT", uniqueConstraints = {@UniqueConstraint(columnNames = {"NAME", "REALM_ID"})})
+@Table(name = "TENANT")
 @NamedQuery(name = "getTenantsByRealmId", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId")
 @NamedQuery(name = "getTenantsByAttributeNameAndValue", query = "select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.value = :value")
 @NamedQuery(name = "getTenantsByAttributeNameAndLongValue", query = "select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
