@@ -97,6 +97,18 @@
             "type" : "string",
             "readOnly" : true
           },
+          "mobileNumber" : {
+            "type" : "string",
+            "description" : "Mobile number of the tenant"
+          },
+          "countryCode" : {
+            "type" : "string",
+            "description" : "Country code of the tenant's mobile number"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Status of the tenant (e.g., ACTIVE, INACTIVE, PENDING)"
+          },
           "attributes" : {
             "type" : "object",
             "additionalProperties" : {
@@ -118,12 +130,33 @@
         "summary" : "List tenants",
         "operationId" : "listTenants",
         "parameters" : [ {
+          "description" : "Tenant country code (exact match, e.g., 91)",
+          "name" : "countryCode",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Require exact name match",
+          "name" : "exactMatch",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "description" : "Pagination offset",
           "name" : "first",
           "in" : "query",
           "schema" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }, {
+          "description" : "Tenant name or ID search keyword (alternative)",
+          "name" : "keyword",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
           }
         }, {
           "description" : "Maximum results size (defaults to 100)",
@@ -134,15 +167,29 @@
             "format" : "int32"
           }
         }, {
-          "description" : "Tenant attribute query",
+          "description" : "Tenant mobile number (exact match)",
+          "name" : "mobileNumber",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Tenant attribute query (e.g., q=city:London)",
           "name" : "q",
           "in" : "query",
           "schema" : {
             "type" : "string"
           }
         }, {
-          "description" : "Tenant name",
+          "description" : "Tenant name or ID search keyword (partial match for name, exact for ID)",
           "name" : "search",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Tenant status (exact match)",
+          "name" : "status",
           "in" : "query",
           "schema" : {
             "type" : "string"
@@ -162,8 +209,14 @@
               }
             }
           },
+          "400" : {
+            "description" : "Bad Request"
+          },
           "401" : {
             "description" : "Unauthorized"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
           }
         }
       },
@@ -182,13 +235,29 @@
         },
         "responses" : {
           "201" : {
-            "description" : "Created"
+            "description" : "Created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TenantRepresentation"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
           },
           "401" : {
             "description" : "Unauthorized"
           },
           "403" : {
             "description" : "Forbidden"
+          },
+          "409" : {
+            "description" : "Conflict"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
           }
         }
       }
@@ -251,6 +320,18 @@
                     "realm" : {
                       "type" : "string",
                       "readOnly" : true
+                    },
+                    "mobileNumber" : {
+                      "type" : "string",
+                      "description" : "Mobile number of the tenant"
+                    },
+                    "countryCode" : {
+                      "type" : "string",
+                      "description" : "Country code of the tenant's mobile number"
+                    },
+                    "status" : {
+                      "type" : "string",
+                      "description" : "Status of the tenant (e.g., ACTIVE, INACTIVE, PENDING)"
                     },
                     "attributes" : {
                       "type" : "object",
