@@ -12,11 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.jbosslog.JBossLog;
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.AuthenticationFlowException;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.*;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -25,6 +21,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 public class SelectActiveTenant implements RequiredActionProvider, RequiredActionFactory {
 
     public static final String ID = "select-active-tenant";
+
+    private static final String HIDE_CANCEL_BTN_NOTE = "nm_mt_hide_cancel_btn";
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -35,12 +33,17 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
 
         log.debug("No active tenant session note found");
         var tenantMemberships = getFilteredTenantMemberships(context);
-        if (tenantMemberships.size() == 1) {
-            log.debug("User is a member of a single tenant, setting active tenant automatically");
-            context.getAuthenticationSession().setUserSessionNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE, tenantMemberships.get(0).getTenant().getId());
-        } else if (tenantMemberships.size() > 1) {
-            log.debug("Tenant selection is required, adding required action");
-            context.getUser().addRequiredAction(ID);
+        switch (tenantMemberships.size()) {
+            case 0 -> log.debug("User is not a member of any tenant, skipping action");
+            case 1 -> {
+                log.debug("User is a member of a single tenant, setting active tenant automatically");
+                context.getAuthenticationSession().setUserSessionNote(Constants.ACTIVE_TENANT_ID_SESSION_NOTE, tenantMemberships.get(0).getTenant().getId());
+            }
+            default -> {
+                log.debug("User is a member of multiple tenants, adding required action");
+                context.getAuthenticationSession().setAuthNote(HIDE_CANCEL_BTN_NOTE, Boolean.toString(true));
+                context.getUser().addRequiredAction(ID);
+            }
         }
     }
 
@@ -55,8 +58,10 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
             context.success();
         } else {
             log.debug("Initializing challenge to select an active tenant");
-            Response challenge = context.form().setAttribute("data", TenantsBean.fromMembership(tenantMemberships)).createForm("select-tenant.ftl");
+            var hideCancelButton = Optional.ofNullable(context.getAuthenticationSession().getAuthNote(HIDE_CANCEL_BTN_NOTE)).orElse(Boolean.toString(false));
+            Response challenge = context.form().setAttribute("data", TenantsBean.fromMembership(tenantMemberships)).setAttribute("hideCancelButton", hideCancelButton).createForm("select-tenant.ftl");
             context.challenge(challenge);
+            context.getAuthenticationSession().removeAuthNote(HIDE_CANCEL_BTN_NOTE);
         }
     }
 
@@ -93,6 +98,18 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
     @Override
     public String getDisplayText() {
         return "Select active tenant";
+    }
+
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+
+    @Override
+    public int getMaxAuthAge() {
+        // 365 days in minutes, basically no limit
+        // switching tenants should not require additional authentication
+        return 365 * 24 * 60;
     }
 
     @Override

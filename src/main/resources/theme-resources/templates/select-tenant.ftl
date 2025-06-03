@@ -20,6 +20,10 @@
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                            name="accept" id="kc-accept" type="submit" value="${msg("doLogIn")}"/>
+                    <#if hideCancelButton = "false">
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonDangerClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                               name="cancel-aia" id="kc-decline" type="submit" value="${msg("doCancel")}"/>
+                    </#if>
                 </div>
             </div>
         </form>
