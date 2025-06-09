@@ -87,7 +87,7 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrIdQuery, Map<String, String> attributes, 
+    public Stream<TenantModel> getTenantsStream(RealmModel realm, String unusedNameOrIdQuery, Map<String, String> unusedAttributes, 
                                                 String mobileNumber, String countryCode) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<TenantEntity> queryBuilder = builder.createQuery(TenantEntity.class);
@@ -95,21 +95,6 @@ public class JpaTenantProvider implements TenantProvider {
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-
-        String exactMatch = attributes != null ? attributes.get("exactMatch") : null;
-        boolean isExactMatch = "true".equalsIgnoreCase(exactMatch);
-
-        if (!ObjectUtils.isEmpty(nameOrIdQuery)) {
-            String trimmedName = nameOrIdQuery.trim();
-            Predicate namePredicate;
-            if (isExactMatch || trimmedName.length() < 3) {
-                namePredicate = builder.equal(builder.lower(root.get("name")), trimmedName.toLowerCase());
-            } else {
-                namePredicate = builder.like(builder.lower(root.get("name")), "%" + trimmedName.toLowerCase() + "%");
-            }
-            Predicate idPredicate = builder.equal(root.get("id"), trimmedName);
-            predicates.add(builder.or(namePredicate, idPredicate));
-        }
 
         if (!ObjectUtils.isEmpty(mobileNumber)) {
             predicates.add(builder.equal(root.get("mobileNumber"), mobileNumber));
@@ -126,6 +111,7 @@ public class JpaTenantProvider implements TenantProvider {
         return query.getResultStream()
                     .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
+
 
     @Override
     public boolean deleteTenant(RealmModel realm, String id) {
