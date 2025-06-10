@@ -9,15 +9,11 @@ import org.keycloak.provider.Provider;
 
 public interface TenantProvider extends Provider {
 
-    TenantModel createTenant(RealmModel realm, String name, UserModel creator);
+	TenantModel createTenant(RealmModel realm, String tenantName, String mobileNumber, String countryCode, String status, UserModel user);
 
     Optional<TenantModel> getTenantById(RealmModel realm, String id);
 
-    Stream<TenantModel> getTenantsStream(RealmModel realm);
-
-    Stream<TenantModel> getTenantsStream(RealmModel realm, String name, Map<String, String> attributes, Integer firstResult, Integer maxResults);
-
-    Stream<TenantModel> getTenantsByAttributeStream(RealmModel realm, String attrName, String attrValue);
+    Stream<TenantModel> getTenantsStream(RealmModel realm, String nameOrIdQuery, Map<String, String> attributes, String mobileNumber, String countryCode);
 
     boolean deleteTenant(RealmModel realm, String id);
 
@@ -26,4 +22,5 @@ public interface TenantProvider extends Provider {
     Stream<TenantMembershipModel> getTenantMembershipsStream(RealmModel realm, UserModel user);
 
     Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user);
+
 }

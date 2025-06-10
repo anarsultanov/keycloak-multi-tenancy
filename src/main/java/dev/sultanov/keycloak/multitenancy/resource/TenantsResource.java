@@ -3,22 +3,18 @@ package dev.sultanov.keycloak.multitenancy.resource;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -28,10 +24,15 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.SearchQueryUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Slf4j
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
     public TenantsResource(KeycloakSession session) {
@@ -43,37 +44,77 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "createTenant", summary = "Create a tenant")
     @APIResponses({
-            @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = TenantRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
-            @APIResponse(responseCode = "403", description = "Forbidden")
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "409", description = "Conflict"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
+        if (ObjectUtils.isEmpty(request)) {
+            log.error("Tenant representation cannot be null");
+            throw new BadRequestException("Tenant representation cannot be null");
+        }
 
-        var requiredRole = realm.getAttribute("requiredRoleForTenantCreation");
-        if (requiredRole != null && !auth.hasAppRole(auth.getClient(), requiredRole)) {
-            throw new ForbiddenException(String.format("Missing required role for tenant creation: %s", requiredRole));
+        log.debug("Creating tenant with name: {}, mobileNumber: {}, countryCode: {}",
+                request.getName(), request.getMobileNumber(), request.getCountryCode());
+
+        if (isNullOrWhitespace(request.getName())) {
+            log.error("Tenant name cannot be null or empty");
+            throw new BadRequestException("Tenant name cannot be null or empty");
+        }
+        if (isNullOrWhitespace(request.getMobileNumber())) {
+            log.error("Mobile number is required");
+            throw new BadRequestException("Mobile number is required");
+        }
+        if (isNullOrWhitespace(request.getCountryCode())) {
+            log.error("Country code is required");
+            throw new BadRequestException("Country code is required");
+        }
+        if (isNullOrWhitespace(request.getStatus())) {
+            log.error("Status is required");
+            throw new BadRequestException("Status is required");
+        }
+
+        // Check for existing tenant with mobile number and country code
+        if (tenantProvider.getTenantsStream(realm, null, Map.of(), request.getMobileNumber(), request.getCountryCode())
+                .findAny()
+                .isPresent()) {
+            log.error("Tenant with mobile number {} and country code {} already exists",
+                    request.getMobileNumber(), request.getCountryCode());
+            throw new WebApplicationException("Tenant with this mobile number and country code already exists", Response.Status.CONFLICT);
         }
 
         validateAttributes(request.getAttributes());
 
-        TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
+        TenantModel model = tenantProvider.createTenant(
+                realm,
+                request.getName(),
+                request.getMobileNumber(),
+                request.getCountryCode(),
+                request.getStatus(),
+                auth.getUser()
+        );
 
-        if (request.getAttributes() != null) {
+        if (ObjectUtils.isNotEmpty(request.getAttributes())) {
             request.getAttributes().forEach((key, values) -> {
-                if (values != null && !values.isEmpty()) {
-                    model.setAttribute(key, values);
-                }
+                model.setAttribute(key, values);
             });
         }
 
-        TenantRepresentation representation = ModelMapper.toRepresentation(model);
+        TenantRepresentation response = ModelMapper.toRepresentation(model);
 
         adminEvent.operation(OperationType.CREATE)
-                .resourcePath(session.getContext().getUri(), representation.getId())
-                .representation(representation)
+                .resourcePath(session.getContext().getUri(), response.getId())
+                .representation(response)
                 .success();
 
-        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getId()).build()).build();
+        log.info("Tenant created successfully: {}", response.getName());
+
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(response.getId()).build())
+                .entity(response)
+                .build();
     }
 
     @GET
@@ -81,53 +122,66 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @Operation(operationId = "listTenants", summary = "List tenants")
     @APIResponses({
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantRepresentation.class))),
-            @APIResponse(responseCode = "401", description = "Unauthorized")
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Stream<TenantRepresentation> listTenants(
-            @Parameter(description = "Tenant name") @QueryParam("search") String searchQuery,
-            @Parameter(description = "Tenant attribute query") @QueryParam("q") String attributeQuery,
-            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
-            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
-        firstResult = firstResult != null ? firstResult : 0;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+            @Parameter(description = "Tenant mobile number (exact match)") @QueryParam("mobileNumber") String mobileNumber,
+            @Parameter(description = "Tenant country code (exact match, e.g., 91)") @QueryParam("countryCode") String countryCode) {
 
-        Map<String, String> searchAttributes = attributeQuery == null
-                ? Collections.emptyMap()
-                : SearchQueryUtils.getFields(attributeQuery);
+        log.debug("Listing tenants with mobileNumber: {}, countryCode: {}", mobileNumber, countryCode);
 
-        Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(realm, searchQuery, searchAttributes,
-                firstResult, maxResults);
+        Stream<TenantModel> tenantStream = tenantProvider.getTenantsStream(
+                realm,
+                null,     
+                Map.of(),
+                mobileNumber,
+                countryCode
+        );
 
-        return tenantStream
+        Stream<TenantRepresentation> result = tenantStream
                 .filter(tenant -> auth.isTenantsManager() || auth.isTenantMember(tenant))
                 .map(ModelMapper::toRepresentation);
+
+        log.debug("Returning tenant stream for mobileNumber: {}, countryCode: {}", mobileNumber, countryCode);
+        return result;
     }
 
     @Path("{tenantId}")
     public TenantResource getTenantResource(@PathParam("tenantId") String tenantId) {
+        log.debug("Fetching tenant resource for ID: {}", tenantId);
+        if (isNullOrWhitespace(tenantId)) {
+            log.error("Tenant ID cannot be null or empty");
+            throw new BadRequestException("Tenant ID cannot be null or empty");
+        }
+
         TenantModel model = tenantProvider.getTenantById(realm, tenantId)
-                .orElseThrow(() -> new NotFoundException(String.format("%s not found", tenantId)));
+                .orElseThrow(() -> {
+                    log.error("Tenant not found with ID: {}", tenantId);
+                    return new NotFoundException(String.format("Tenant %s not found", tenantId));
+                });
+
         if (auth.isTenantsManager() || auth.isTenantAdmin(model)) {
+            log.debug("Access granted for tenant ID: {}", tenantId);
             return new TenantResource(this, model);
         } else {
-            throw new ForbiddenException(String.format("Insufficient permission to access %s", tenantId));
+            log.error("Insufficient permissions for tenant ID: {}", tenantId);
+            throw new ForbiddenException(String.format("Insufficient permission to access tenant %s", tenantId));
         }
     }
 
+    private boolean isNullOrWhitespace(String str) {
+        return ObjectUtils.isEmpty(str) || str.trim().isEmpty();
+    }
+
     private void validateAttributes(Map<String, List<String>> attributes) {
-        if (attributes != null) {
+        if (ObjectUtils.isNotEmpty(attributes)) {
             attributes.forEach((key, values) -> {
-                if (key == null || key.trim().isEmpty()) {
+                if (isNullOrWhitespace(key)) {
+                    log.error("Attribute name cannot be null or empty");
                     throw new BadRequestException("Attribute name cannot be null or empty");
                 }
-                if (values == null || values.isEmpty()) {
-                    throw new BadRequestException("Attribute values cannot be null or empty for key: " + key);
-                }
-                values.forEach(value -> {
-                    if (value == null || value.trim().isEmpty()) {
-                        throw new BadRequestException("Attribute value cannot be null or empty for key: " + key);
-                    }
-                });
             });
         }
     }

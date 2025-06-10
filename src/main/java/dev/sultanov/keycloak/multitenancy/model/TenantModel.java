@@ -18,10 +18,22 @@ public interface TenantModel {
 
     void setName(String name);
 
+    String getMobileNumber();
+
+    void setMobileNumber(String mobileNumber);
+
+    String getCountryCode(); // Add this method
+
+    void setCountryCode(String countryCode); // Add this method
+
+    String getStatus(); // Add this method
+
+    void setStatus(String status); // Add this method
+
     RealmModel getRealm();
 
     /* Attribute */
-     /**
+    /**
      * Set single value of specified attribute. Remove all other existing values
      *
      * @param name
@@ -49,7 +61,6 @@ public interface TenantModel {
     Map<String, List<String>> getAttributes();
 
     /* Membership */
-
     TenantMembershipModel grantMembership(UserModel user, Set<String> roles);
 
     Stream<TenantMembershipModel> getMembershipsStream(Integer firstResult, Integer maxResults);
@@ -80,19 +91,14 @@ public interface TenantModel {
     void revokeInvitations(String email);
 
     interface TenantEvent extends ProviderEvent {
-
         TenantModel getTenant();
-
         KeycloakSession getKeycloakSession();
-
         RealmModel getRealm();
     }
 
     interface TenantCreatedEvent extends TenantEvent {
-
     }
 
     interface TenantRemovedEvent extends TenantEvent {
-
     }
 }
