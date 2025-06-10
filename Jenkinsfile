@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'feat/#I576_jenkins_pipeline_created',
+                git branch: 'main',
                     url: 'https://github.com/Azguards-Technolabs/keycloak-multi-tenancy',
                     credentialsId: 'github-token'
             }
