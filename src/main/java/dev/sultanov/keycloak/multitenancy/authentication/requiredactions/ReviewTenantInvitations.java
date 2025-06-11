@@ -1,8 +1,14 @@
 package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -79,10 +85,10 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         String acceptedTenantsStr = formData.getFirst(ACCEPTED_TENANTS_ATTR);
         String rejectedTenantsStr = formData.getFirst(REJECTED_TENANTS_ATTR);
 
-        List<String> acceptedTenants = acceptedTenantsStr != null && !acceptedTenantsStr.isEmpty()
+        List<String> acceptedTenants = ObjectUtils.isNotEmpty(acceptedTenantsStr)
                 ? Arrays.asList(acceptedTenantsStr.split(","))
                 : Collections.emptyList();
-        List<String> rejectedTenants = rejectedTenantsStr != null && !rejectedTenantsStr.isEmpty()
+        List<String> rejectedTenants = ObjectUtils.isNotEmpty(rejectedTenantsStr)
                 ? Arrays.asList(rejectedTenantsStr.split(","))
                 : Collections.emptyList();
 
@@ -113,6 +119,17 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         log.debugf("Processing %d tenants for user: %s - %s", 
                    allProcessedTenants.size(), user.getId(), allProcessedTenants);
 
+        // Call User Service API for bulk status update
+        log.infof("Initiating user service call for user: %s with accepted: %s, rejected: %s", 
+                  user.getId(), acceptedTenants, rejectedTenants);
+        try {
+            userServiceRestClient.updateUserTenantInvitationStatuses(user.getId(), acceptedTenants, rejectedTenants);
+            log.infof("Successfully completed user service call for user: %s", user.getId());
+        } catch (Exception e) {
+            log.errorf(e, "Failed to update user invitation status in user service for user: %s", user.getId());
+            throw new RuntimeException("Failed to update user invitation status", e);
+        }
+        
         for (String tenantId : allProcessedTenants) {
             Optional<TenantInvitationModel> invitation = provider.getTenantInvitationsStream(realm, user)
                     .filter(inv -> inv.getTenant().getId().equals(tenantId))
@@ -145,16 +162,6 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             } else {
                 log.warnf("No invitation found for tenant ID: %s for user: %s", tenantId, user.getId());
             }
-        }
-
-        // Call User Service API for bulk status update
-        log.infof("Initiating user service call for user: %s with accepted: %s, rejected: %s", 
-                  user.getId(), acceptedTenants, rejectedTenants);
-        try {
-            userServiceRestClient.updateUserTenantInvitationStatuses(user.getId(), acceptedTenants, rejectedTenants);
-            log.infof("Successfully completed user service call for user: %s", user.getId());
-        } catch (Exception e) {
-            log.errorf(e, "Failed to update user invitation status in user service for user: %s", user.getId());
         }
 
         if (provider.getTenantMembershipsStream(realm, user).findAny().isPresent()) {
