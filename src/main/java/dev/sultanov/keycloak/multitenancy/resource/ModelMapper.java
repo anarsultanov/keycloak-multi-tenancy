@@ -22,6 +22,9 @@ public class ModelMapper {
         representation.setName(tenant.getName());
         representation.setRealm(tenant.getRealm().getName());
         representation.setAttributes(tenant.getAttributes());
+        representation.setMobileNumber(tenant.getMobileNumber());
+        representation.setCountryCode(tenant.getCountryCode()); // Add this line
+        representation.setStatus(tenant.getStatus());           // Add this line
         return representation;
     }
 

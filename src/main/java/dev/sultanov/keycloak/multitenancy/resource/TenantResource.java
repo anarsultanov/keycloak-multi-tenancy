@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.ObjectUtils; // Import Apache Commons Lang ObjectUtils
+import org.apache.commons.lang3.StringUtils; // Import Apache Commons Lang StringUtils
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -57,17 +59,26 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response updateTenant(TenantRepresentation request) {
-        if (request.getName() != null && !request.getName().isEmpty()) {
+        if (StringUtils.isNotEmpty(request.getName())) {
             tenant.setName(request.getName());
         }
+        if (StringUtils.isNotEmpty(request.getMobileNumber())) {
+            tenant.setMobileNumber(request.getMobileNumber());
+        }
+        if (StringUtils.isNotEmpty(request.getCountryCode())) {
+            tenant.setCountryCode(request.getCountryCode());
+        }
+        if (StringUtils.isNotEmpty(request.getStatus())) {
+            tenant.setStatus(request.getStatus());
+        }
 
-        if (request.getAttributes() != null) {
+        if (ObjectUtils.isNotEmpty(request.getAttributes())) {
             Set<String> attrsToRemove = new HashSet<>(tenant.getAttributes().keySet());
             attrsToRemove.removeAll(request.getAttributes().keySet());
+
             for (Map.Entry<String, List<String>> attr : request.getAttributes().entrySet()) {
                 tenant.setAttribute(attr.getKey(), attr.getValue());
             }
-
             for (String attr : attrsToRemove) {
                 tenant.removeAttribute(attr);
             }
@@ -80,6 +91,7 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
 
         return Response.noContent().build();
     }
+
 
     @DELETE
     @Operation(operationId = "deleteTenant", summary = "Delete tenant")

@@ -19,6 +19,16 @@ public class TenantRepresentation {
     @Schema(readOnly = true)
     private String realm;
 
+    @Schema(description = "Mobile number of the tenant")
+    private String mobileNumber;
+
+    // Add these new fields
+    @Schema(description = "Country code of the tenant's mobile number")
+    private String countryCode;
+
+    @Schema(description = "Status of the tenant (e.g., ACTIVE, INACTIVE, PENDING)")
+    private String status;
+
     @Schema(description = "Attributes of the tenant")
     private Map<String, List<String>> attributes = new HashMap<>();
 }
