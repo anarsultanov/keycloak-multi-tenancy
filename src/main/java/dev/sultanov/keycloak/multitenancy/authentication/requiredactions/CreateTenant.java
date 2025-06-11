@@ -46,6 +46,9 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
         var provider = context.getSession().getProvider(TenantProvider.class);
         var formData = context.getHttpRequest().getDecodedFormParameters();
         var tenantName = formData.getFirst("tenantName");
+        var mobileNumber = "";
+        var countryCode = "";
+        var status = "";        
 
         if (Validation.isBlank(tenantName)) {
             Response challenge = context.form()
@@ -53,7 +56,7 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
                     .createForm("create-tenant.ftl");
             context.challenge(challenge);
             return;
-        } else if (provider.getTenantsStream(realm, tenantName, null, tenantName, tenantName).map(TenantModel::getName).anyMatch(tenantName::equals)) {
+        } else if (provider.getTenantsStream(realm, mobileNumber, null, mobileNumber, countryCode).map(TenantModel::getName).anyMatch(tenantName::equals)) {
             Response challenge = context.form()
                     .addError(new FormMessage("tenantName", "tenantExistsError"))
                     .createForm("create-tenant.ftl");
@@ -61,7 +64,8 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
             return;
         }
 
-        provider.createTenant(realm, tenantName, tenantName, tenantName, tenantName, user);
+
+        provider.createTenant(realm, tenantName, mobileNumber, countryCode, status, user);
         context.success();
     }
 

@@ -9,16 +9,15 @@ import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantAttributeEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.Map;
-import java.util.Objects;
-import java.util.List;
-import java.util.ArrayList;
-
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -61,6 +60,36 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
     }
 
     @Override
+    public String getMobileNumber() {
+        return tenant.getMobileNumber();
+    }
+
+    @Override
+    public void setMobileNumber(String mobileNumber) {
+        tenant.setMobileNumber(mobileNumber);
+    }
+
+    @Override
+    public String getCountryCode() {
+        return tenant.getCountryCode();
+    }
+
+    @Override
+    public void setCountryCode(String countryCode) {
+        tenant.setCountryCode(countryCode);
+    }
+
+    @Override
+    public String getStatus() {
+        return tenant.getStatus();
+    }
+
+    @Override
+    public void setStatus(String status) {
+        tenant.setStatus(status);
+    }
+
+    @Override
     public RealmModel getRealm() {
         return session.realms().getRealm(tenant.getRealmId());
     }
@@ -100,10 +129,8 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
             return;
         }
 
-        // Remove all existing
         removeAttribute(name);
 
-        // Put all new
         for (String value : values) {
             persistAttributeValue(name, value);
         }
