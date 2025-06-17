@@ -113,12 +113,6 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             return;
         }
 
-        // Enable user if not enabled
-        if (!user.isEnabled()) {
-            log.infof("Enabling user: %s as they are not enabled", user.getId());
-            user.setEnabled(true);
-        }
-
         Set<String> allProcessedTenants = new HashSet<>();
         allProcessedTenants.addAll(acceptedTenants);
         allProcessedTenants.addAll(rejectedTenants);
