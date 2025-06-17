@@ -28,7 +28,7 @@ public class UserServiceRestClient {
         log.debug("Initialized UserServiceRestClient with connect timeout: 10 seconds");
     }
 
-    public void updateUserTenantInvitationStatuses(String userId, List<String> accepted, List<String> rejected) throws Exception {
+    public void updateUserTenantInvitationStatuses(String userId, List<String> accepted, List<String> rejected) {
         log.infof("Starting user service update for userId: %s, accepted: %s, rejected: %s", 
                   userId, accepted, rejected);
 
@@ -37,20 +37,21 @@ public class UserServiceRestClient {
             return;
         }
 
+        List<BusinessStatusEntry> businessStatusList = new ArrayList<>();
+
+        if (!ObjectUtils.isEmpty(accepted)) {
+            businessStatusList.add(new BusinessStatusEntry("Active", accepted));
+            log.debugf("Added Active status for userId: %s with businessIds: %s", userId, accepted);
+        }
+
+        if (!ObjectUtils.isEmpty(rejected)) {
+            businessStatusList.add(new BusinessStatusEntry("Reject", rejected));
+            log.debugf("Added Reject status for userId: %s with businessIds: %s", userId, rejected);
+        }
+
+        BusinessStatusRequest finalPayload = new BusinessStatusRequest(businessStatusList);
+
         try {
-            List<BusinessStatusEntry> businessStatusList = new ArrayList<>();
-
-            if (!ObjectUtils.isEmpty(accepted)) {
-                businessStatusList.add(new BusinessStatusEntry("Active", accepted));
-                log.debugf("Added Active status for userId: %s with businessIds: %s", userId, accepted);
-            }
-
-            if (!ObjectUtils.isEmpty(rejected)) {
-                businessStatusList.add(new BusinessStatusEntry("Reject", rejected));
-                log.debugf("Added Reject status for userId: %s with businessIds: %s", userId, rejected);
-            }
-
-            BusinessStatusRequest finalPayload = new BusinessStatusRequest(businessStatusList);
             String json = JsonSerialization.writeValueAsString(finalPayload);
             log.infof("Prepared payload for userId: %s: %s", userId, json);
 
