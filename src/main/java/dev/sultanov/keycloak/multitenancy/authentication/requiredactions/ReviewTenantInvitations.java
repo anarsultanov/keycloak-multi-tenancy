@@ -53,7 +53,7 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var user = context.getUser();
         var provider = context.getSession().getProvider(TenantProvider.class);
 
-        if (user.getEmail() != null && user.isEmailVerified()) {
+        if (ObjectUtils.isNotEmpty(user.getEmail()) && user.isEmailVerified()) {
             var invitations = provider.getTenantInvitationsStream(realm, user).toList();
             log.debugf("Found %d invitations for user: %s, email: %s", 
                        invitations.size(), user.getId(), user.getEmail());
@@ -113,6 +113,12 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
             return;
         }
 
+        // Enable user if not enabled
+        if (!user.isEnabled()) {
+            log.infof("Enabling user: %s as they are not enabled", user.getId());
+            user.setEnabled(true);
+        }
+
         Set<String> allProcessedTenants = new HashSet<>();
         allProcessedTenants.addAll(acceptedTenants);
         allProcessedTenants.addAll(rejectedTenants);
@@ -122,9 +128,9 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         // Call User Service API for bulk status update
         log.infof("Initiating user service call for user: %s with accepted: %s, rejected: %s", 
                   user.getId(), acceptedTenants, rejectedTenants);
-            userServiceRestClient.updateUserTenantInvitationStatuses(user.getId(), acceptedTenants, rejectedTenants);
-            log.infof("Successfully completed user service call for user: %s", user.getId());
-        
+        userServiceRestClient.updateUserTenantInvitationStatuses(user.getId(), acceptedTenants, rejectedTenants);
+        log.infof("Successfully completed user service call for user: %s", user.getId());
+
         for (String tenantId : allProcessedTenants) {
             Optional<TenantInvitationModel> invitation = provider.getTenantInvitationsStream(realm, user)
                     .filter(inv -> inv.getTenant().getId().equals(tenantId))
@@ -135,17 +141,24 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
                 log.debugf("Processing tenant: %s (ID: %s) for user: %s", tenantName, tenantId, user.getId());
 
                 if (acceptedTenants.contains(tenantId)) {
+                    // Update tenant status to Active if not already Active
+                    if (!"ACTIVE".equalsIgnoreCase(inv.getTenant().getStatus())) {
+                        log.infof("Updating tenant: %s (ID: %s) status to Active for user: %s", 
+                                  tenantName, tenantId, user.getId());
+                        inv.getTenant().setStatus("ACTIVE");
+                    }
+
                     log.infof("Granting membership for user: %s to tenant: %s with roles: %s", 
                               user.getId(), tenantName, inv.getRoles());
                     inv.getTenant().grantMembership(user, inv.getRoles());
-                    if (inv.getInvitedBy() != null) {
+                    if (ObjectUtils.isNotEmpty(inv.getInvitedBy())) {
                         log.debugf("Sending acceptance email for user: %s, tenant: %s, invited by: %s", 
                                    user.getId(), tenantName, inv.getInvitedBy());
                         EmailSender.sendInvitationAcceptedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
                     }
                 } else if (rejectedTenants.contains(tenantId)) {
                     log.infof("Rejecting invitation for user: %s to tenant: %s", user.getId(), tenantName);
-                    if (inv.getInvitedBy() != null) {
+                    if (ObjectUtils.isNotEmpty(inv.getInvitedBy())) {
                         log.debugf("Sending rejection email for user: %s, tenant: %s, invited by: %s", 
                                    user.getId(), tenantName, inv.getInvitedBy());
                         EmailSender.sendInvitationDeclinedEmail(context.getSession(), inv.getInvitedBy(), inv.getEmail(), tenantName);
