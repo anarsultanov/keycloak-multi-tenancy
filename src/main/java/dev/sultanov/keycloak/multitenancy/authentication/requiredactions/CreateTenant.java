@@ -64,6 +64,7 @@ public class CreateTenant implements RequiredActionProvider, RequiredActionFacto
             return;
         }
 
+
         provider.createTenant(realm, tenantName, mobileNumber, countryCode, status, user);
         context.success();
     }
