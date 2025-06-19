@@ -40,12 +40,12 @@ public class UserServiceRestClient {
         List<BusinessStatusEntry> businessStatusList = new ArrayList<>();
 
         if (!ObjectUtils.isEmpty(accepted)) {
-            businessStatusList.add(new BusinessStatusEntry("Active", accepted));
+            businessStatusList.add(new BusinessStatusEntry("ACTIVE", accepted));
             log.debugf("Added Active status for userId: %s with businessIds: %s", userId, accepted);
         }
 
         if (!ObjectUtils.isEmpty(rejected)) {
-            businessStatusList.add(new BusinessStatusEntry("Reject", rejected));
+            businessStatusList.add(new BusinessStatusEntry("REJECT", rejected));
             log.debugf("Added Reject status for userId: %s with businessIds: %s", userId, rejected);
         }
 
