@@ -4,7 +4,7 @@
 
     <groupId>dev.sultanov</groupId>
     <artifactId>keycloak-multi-tenancy</artifactId>
-    <version>26.0.2</version>
+    <version>26.0.3</version>
     <packaging>jar</packaging>
 
     <name>Keycloak Multi-Tenancy</name>
@@ -22,6 +22,16 @@
     </properties>
 
     <dependencies>
+		<dependency>
+		    <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpclient</artifactId>
+		    <version>4.5.14</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-lang3</artifactId>
+		    <version>3.12.0</version>
+		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
