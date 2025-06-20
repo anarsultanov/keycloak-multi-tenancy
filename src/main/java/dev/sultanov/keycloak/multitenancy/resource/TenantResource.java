@@ -105,4 +105,9 @@ public class TenantResource extends AbstractAdminResource<TenantAdminAuth> {
     public TenantMembershipsResource memberships() {
         return new TenantMembershipsResource(this, tenant);
     }
+
+    @Path("group-ownerships")
+    public TenantGroupOwnershipResource groupOwnerships() {
+        return new TenantGroupOwnershipResource(this, tenant);
+    }
 }

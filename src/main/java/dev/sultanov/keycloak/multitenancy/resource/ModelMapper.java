@@ -1,8 +1,10 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import dev.sultanov.keycloak.multitenancy.model.TenantGroupOwnershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantGroupOwnershipRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantInvitationRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
@@ -40,6 +42,13 @@ public class ModelMapper {
         representation.setId(membership.getId());
         representation.setUser(ModelToRepresentation.toBriefRepresentation(membership.getUser()));
         representation.setRoles(membership.getRoles());
+        return representation;
+    }
+
+    static TenantGroupOwnershipRepresentation toRepresentation(TenantGroupOwnershipModel groupOwnership) {
+        TenantGroupOwnershipRepresentation representation = new TenantGroupOwnershipRepresentation();
+        representation.setId(groupOwnership.getId());
+        representation.setGroup(ModelToRepresentation.groupToBriefRepresentation(groupOwnership.getGroup()));
         return representation;
     }
 }
