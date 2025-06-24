@@ -170,6 +170,40 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
             throw new ForbiddenException(String.format("Insufficient permission to access tenant %s", tenantId));
         }
     }
+    
+    @GET
+    @Path("users/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "listTenantsByUserId", summary = "List tenants for a specific user ID")
+    @APIResponses({
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "User not found"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    public Stream<TenantRepresentation> listTenantsByUserId(
+            @Parameter(description = "User ID to fetch associated tenants") @PathParam("userId") String userId) {
+        log.debug("Listing tenants for user ID: {}", userId);
+
+        if (isNullOrWhitespace(userId)) {
+            log.error("User ID cannot be null or empty");
+            throw new BadRequestException("User ID cannot be null or empty");
+        }
+
+        // Verify user exists
+        if (ObjectUtils.isEmpty(session.users().getUserById(realm, userId))) {
+            log.error("User not found with ID: {}", userId);
+            throw new NotFoundException(String.format("User %s not found", userId));
+        }
+
+        Stream<TenantModel> tenantStream = tenantProvider.getUserTenantsStream(realm, session.users().getUserById(realm, userId));
+        Stream<TenantRepresentation> result = tenantStream.map(ModelMapper::toRepresentation);
+
+        log.info("Successfully fetched tenants for user ID: {}", userId);
+        return result;
+    }
 
     private boolean isNullOrWhitespace(String str) {
         return ObjectUtils.isEmpty(str) || str.trim().isEmpty();

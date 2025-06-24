@@ -211,6 +211,51 @@
         }
       }
     },
+    "/tenants/users/{userId}" : {
+      "get" : {
+        "summary" : "List tenants for a specific user ID",
+        "operationId" : "listTenantsByUserId",
+        "parameters" : [ {
+          "description" : "User ID to fetch associated tenants",
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TenantRepresentation"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "User not found"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}" : {
       "parameters" : [ {
         "name" : "tenantId",
@@ -579,7 +624,7 @@
   },
   "info" : {
     "title" : "Keycloak Multi-Tenancy",
-    "version" : "26.0.3"
+    "version" : "26.0.5"
   },
   "servers" : [ {
     "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
