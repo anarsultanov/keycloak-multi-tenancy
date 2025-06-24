@@ -1,5 +1,6 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import dev.sultanov.keycloak.multitenancy.dto.BusinessStatus;
 import dev.sultanov.keycloak.multitenancy.dto.BusinessStatusEntry;
 import dev.sultanov.keycloak.multitenancy.dto.BusinessStatusRequest;
 import org.apache.commons.lang3.ObjectUtils;
@@ -40,12 +41,12 @@ public class UserServiceRestClient {
         List<BusinessStatusEntry> businessStatusList = new ArrayList<>();
 
         if (!ObjectUtils.isEmpty(accepted)) {
-            businessStatusList.add(new BusinessStatusEntry("ACTIVE", accepted));
+            businessStatusList.add(new BusinessStatusEntry(BusinessStatus.ACTIVE.name(), accepted));
             log.debugf("Added Active status for userId: %s with businessIds: %s", userId, accepted);
         }
 
         if (!ObjectUtils.isEmpty(rejected)) {
-            businessStatusList.add(new BusinessStatusEntry("REJECT", rejected));
+            businessStatusList.add(new BusinessStatusEntry(BusinessStatus.REJECT.name(), rejected));
             log.debugf("Added Reject status for userId: %s with businessIds: %s", userId, rejected);
         }
 
