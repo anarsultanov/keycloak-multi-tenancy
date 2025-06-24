@@ -399,6 +399,6 @@ paths:
           description: Not Found
 info:
   title: Keycloak Multi-Tenancy
-  version: 26.0.2
+  version: 26.0.3
 servers:
 - url: "{{keycloakUrl}}/auth/realms/{{realmName}}"
