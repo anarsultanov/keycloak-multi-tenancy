@@ -454,6 +454,49 @@
         }
       }
     },
+    "/tenants/{tenantId}/invitations/users/{userId}" : {
+      "delete" : {
+        "summary" : "Revoke invitation for a specific user in a tenant",
+        "operationId" : "revokeInvitationByUserId",
+        "parameters" : [ {
+          "description" : "Tenant ID",
+          "name" : "tenantId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "User ID to revoke invitation",
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Tenant, User, or Invitation not found"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/invitations/{invitationId}" : {
       "parameters" : [ {
         "name" : "tenantId",
@@ -545,6 +588,49 @@
           },
           "403" : {
             "description" : "Forbidden"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/memberships/users/{userId}" : {
+      "delete" : {
+        "summary" : "Revoke membership for a specific user in a tenant",
+        "operationId" : "revokeMembershipByUserId",
+        "parameters" : [ {
+          "description" : "Tenant ID",
+          "name" : "tenantId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "User ID to revoke membership",
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Tenant, User, or Membership not found"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
           }
         }
       }

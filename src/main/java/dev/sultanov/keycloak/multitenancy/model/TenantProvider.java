@@ -23,4 +23,8 @@ public interface TenantProvider extends Provider {
 
     Stream<TenantModel> getUserTenantsStream(RealmModel realm, UserModel user);
 
+    boolean revokeMembership(RealmModel realm, String tenantId, String userId);
+
+    boolean revokeInvitation(RealmModel realm, String tenantId, String userId);
+
 }

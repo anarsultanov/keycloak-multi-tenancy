@@ -112,6 +112,57 @@ public class JpaTenantProvider implements TenantProvider {
                     .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
 
+    @Override
+    public boolean revokeMembership(RealmModel realm, String tenantId, String userId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<TenantMembershipEntity> query = cb.createQuery(TenantMembershipEntity.class);
+        Root<TenantMembershipEntity> root = query.from(TenantMembershipEntity.class);
+        Join<TenantMembershipEntity, TenantEntity> tenantJoin = root.join("tenant");
+
+        Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
+        Predicate tenantMatch = cb.equal(tenantJoin.get("id"), tenantId);
+        Predicate userMatch = cb.equal(root.get("user").get("id"), userId);
+
+        query.select(root).where(cb.and(realmMatch, tenantMatch, userMatch));
+
+        List<TenantMembershipEntity> memberships = em.createQuery(query).getResultList();
+        if (memberships.isEmpty()) {
+            log.debug("No membership found for tenant ID: {} and user ID: {}", tenantId, userId);
+            return false;
+        }
+
+        for (TenantMembershipEntity entity : memberships) {
+            em.remove(entity);
+        }
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public boolean revokeInvitation(RealmModel realm, String tenantId, String userId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<TenantInvitationEntity> query = cb.createQuery(TenantInvitationEntity.class);
+        Root<TenantInvitationEntity> root = query.from(TenantInvitationEntity.class);
+        Join<TenantInvitationEntity, TenantEntity> tenantJoin = root.join("tenant");
+
+        Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
+        Predicate tenantMatch = cb.equal(tenantJoin.get("id"), tenantId);
+        Predicate userMatch = cb.equal(root.get("userId"), userId);
+
+        query.select(root).where(cb.and(realmMatch, tenantMatch, userMatch));
+
+        List<TenantInvitationEntity> invitations = em.createQuery(query).getResultList();
+        if (invitations.isEmpty()) {
+            log.debug("No invitation found for tenant ID: {} and user ID: {}", tenantId, userId);
+            return false;
+        }
+
+        for (TenantInvitationEntity entity : invitations) {
+            em.remove(entity);
+        }
+        em.flush();
+        return true;
+    }
 
     @Override
     public boolean deleteTenant(RealmModel realm, String id) {

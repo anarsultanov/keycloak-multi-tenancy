@@ -7,6 +7,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -25,6 +26,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -203,6 +206,64 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
 
         log.info("Successfully fetched tenants for user ID: {}", userId);
         return result;
+    }
+    
+    @DELETE
+    @Path("{tenantId}/memberships/users/{userId}")
+    @Operation(operationId = "revokeMembershipByUserId", summary = "Revoke membership for a specific user in a tenant")
+    @APIResponses({
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Tenant, User, or Membership not found"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    public Response revokeMembershipByUserId(
+            @Parameter(description = "Tenant ID") @PathParam("tenantId") String tenantId,
+            @Parameter(description = "User ID to revoke membership") @PathParam("userId") String userId) {
+        log.debug("Attempting to revoke membership for tenant ID: {} and user ID: {}", tenantId, userId);
+
+        // Revoke membership
+        boolean revoked = tenantProvider.revokeMembership(realm, tenantId, userId);
+        if (!revoked) {
+            log.error("Failed to revoke membership for tenant ID: {} and user ID: {}", tenantId, userId);
+            throw new WebApplicationException(
+                    String.format("Failed to revoke membership for tenant %s and user %s", tenantId, userId),
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        log.info("Successfully revoked membership for tenant ID: {} and user ID: {}", tenantId, userId);
+        return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path("{tenantId}/invitations/users/{userId}")
+    @Operation(operationId = "revokeInvitationByUserId", summary = "Revoke invitation for a specific user in a tenant")
+    @APIResponses({
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Tenant, User, or Invitation not found"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    public Response revokeInvitationByUserId(
+            @Parameter(description = "Tenant ID") @PathParam("tenantId") String tenantId,
+            @Parameter(description = "User ID to revoke invitation") @PathParam("userId") String userId) {
+        log.debug("Attempting to revoke invitation for tenant ID: {} and user ID: {}", tenantId, userId);
+
+        // Revoke invitation
+        boolean revoked = tenantProvider.revokeInvitation(realm, tenantId, userId);
+        if (!revoked) {
+            log.error("Failed to revoke invitation for tenant ID: {} and user ID: {}", tenantId, userId);
+            throw new WebApplicationException(
+                    String.format("Failed to revoke invitation for tenant %s and user %s", tenantId, userId),
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        log.info("Successfully revoked invitation for tenant ID: {} and user ID: {}", tenantId, userId);
+        return Response.noContent().build();
     }
 
     private boolean isNullOrWhitespace(String str) {
