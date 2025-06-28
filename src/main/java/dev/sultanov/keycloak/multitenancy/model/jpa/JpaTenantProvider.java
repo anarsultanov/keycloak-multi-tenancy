@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -21,6 +22,8 @@ import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
 import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
+import dev.sultanov.keycloak.multitenancy.resource.representation.UserMembershipRepresentation;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -29,6 +32,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -111,7 +115,44 @@ public class JpaTenantProvider implements TenantProvider {
         return query.getResultStream()
                     .map(tenantEntity -> new TenantAdapter(session, realm, em, tenantEntity));
     }
+    
+    @Override
+    public List<UserMembershipRepresentation> listMembershipsByUserId(RealmModel realm, String userId) {
+        log.debug("Fetching memberships for user ID: {}", userId);
 
+        if (ObjectUtils.isEmpty(userId) || userId.trim().isEmpty()) {
+            log.error("User ID cannot be null or empty");
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+
+        UserModel user = session.users().getUserById(realm, userId);
+        if (ObjectUtils.isEmpty(user)) {
+            log.error("User not found with ID: {}", userId);
+            throw new NotFoundException(String.format("User %s not found", userId));
+        }
+
+        TypedQuery<TenantMembershipEntity> query =
+                em.createNamedQuery("getMembershipsByUserId", TenantMembershipEntity.class);
+        query.setParameter("userId", userId);
+
+        List<UserMembershipRepresentation> memberships = query.getResultList()
+            .stream()
+            .filter(entity -> entity.getTenant() != null && entity.getTenant().getId() != null)
+            .map(entity -> {
+                UserMembershipRepresentation membership = new UserMembershipRepresentation();
+                membership.setId(entity.getId());
+                membership.setTenantId(entity.getTenant().getId());
+                membership.setRoles(entity.getRoles() != null ? new ArrayList<>(entity.getRoles()) : new ArrayList<>());
+                log.debug("Constructed membership: id={}, tenantId={}, roles={}",
+                        membership.getId(), membership.getTenantId(), membership.getRoles());
+                return membership;
+            })
+            .collect(Collectors.toList());
+
+        log.info("Found {} valid memberships for user ID: {}", memberships.size(), userId);
+        return memberships;
+    }
+    
     @Override
     public boolean revokeMembership(RealmModel realm, String tenantId, String userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();

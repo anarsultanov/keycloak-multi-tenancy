@@ -1,7 +1,10 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
+import dev.sultanov.keycloak.multitenancy.resource.representation.TenantMembershipRepresentation;
 import dev.sultanov.keycloak.multitenancy.resource.representation.TenantRepresentation;
+import dev.sultanov.keycloak.multitenancy.resource.representation.UserMembershipRepresentation;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
@@ -177,35 +180,28 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @GET
     @Path("users/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listTenantsByUserId", summary = "List tenants for a specific user ID")
+    @Operation(operationId = "listMembershipsByUserId", summary = "List memberships for a specific user ID")
     @APIResponses({
-            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TenantRepresentation.class))),
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserMembershipRepresentation.class))),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
-            @APIResponse(responseCode = "403", description = "Forbidden"),
             @APIResponse(responseCode = "404", description = "User not found"),
             @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
-    public Stream<TenantRepresentation> listTenantsByUserId(
-            @Parameter(description = "User ID to fetch associated tenants") @PathParam("userId") String userId) {
-        log.debug("Listing tenants for user ID: {}", userId);
+    public List<UserMembershipRepresentation> listMembershipsByUserId(
+            @Parameter(description = "User ID to fetch associated memberships") @PathParam("userId") String userId) {
+        log.debug("Listing memberships for user ID: {}", userId);
 
         if (isNullOrWhitespace(userId)) {
             log.error("User ID cannot be null or empty");
             throw new BadRequestException("User ID cannot be null or empty");
         }
 
-        // Verify user exists
-        if (ObjectUtils.isEmpty(session.users().getUserById(realm, userId))) {
-            log.error("User not found with ID: {}", userId);
-            throw new NotFoundException(String.format("User %s not found", userId));
-        }
-
-        Stream<TenantModel> tenantStream = tenantProvider.getUserTenantsStream(realm, session.users().getUserById(realm, userId));
-        Stream<TenantRepresentation> result = tenantStream.map(ModelMapper::toRepresentation);
-
-        log.info("Successfully fetched tenants for user ID: {}", userId);
-        return result;
+        List<UserMembershipRepresentation> memberships = tenantProvider.listMembershipsByUserId(realm, userId);
+        log.info("Fetched {} memberships for user ID: {}", memberships.size(), userId);
+        memberships.forEach(m -> log.debug("Membership: id={}, tenantId={}, roles={}", 
+                m.getId(), m.getTenantId(), m.getRoles()));
+        return memberships;
     }
     
     @DELETE

@@ -24,7 +24,8 @@ import org.keycloak.models.jpa.entities.UserEntity;
         @NamedQuery(name = "getMembershipsByRealmIdAndUserId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.realmId = :realmId AND m.user.id = :userId"),
         @NamedQuery(name = "getMembershipsByTenantId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId"),
         @NamedQuery(name = "getMembershipsByTenantIdAndUserId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId AND m.user.id = :userId"),
-        @NamedQuery(name = "getMembershipsByTenantIdAndUserEmail", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId AND m.user.email = :email")
+        @NamedQuery(name = "getMembershipsByTenantIdAndUserEmail", query = "SELECT m FROM TenantMembershipEntity m WHERE m.tenant.id = :tenantId AND m.user.email = :email"),
+        @NamedQuery(name = "getMembershipsByUserId", query = "SELECT m FROM TenantMembershipEntity m WHERE m.user.id = :userId")
 })
 public class TenantMembershipEntity {
 
