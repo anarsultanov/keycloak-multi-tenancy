@@ -4,7 +4,7 @@
 
     <groupId>dev.sultanov</groupId>
     <artifactId>keycloak-multi-tenancy</artifactId>
-    <version>26.0.5</version>
+    <version>26.0.6</version>
     <packaging>jar</packaging>
 
     <name>Keycloak Multi-Tenancy</name>
