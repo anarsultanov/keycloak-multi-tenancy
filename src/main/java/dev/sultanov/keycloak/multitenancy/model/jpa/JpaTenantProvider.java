@@ -180,32 +180,6 @@ public class JpaTenantProvider implements TenantProvider {
     }
 
     @Override
-    public boolean revokeInvitation(RealmModel realm, String tenantId, String userId) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<TenantInvitationEntity> query = cb.createQuery(TenantInvitationEntity.class);
-        Root<TenantInvitationEntity> root = query.from(TenantInvitationEntity.class);
-        Join<TenantInvitationEntity, TenantEntity> tenantJoin = root.join("tenant");
-
-        Predicate realmMatch = cb.equal(tenantJoin.get("realmId"), realm.getId());
-        Predicate tenantMatch = cb.equal(tenantJoin.get("id"), tenantId);
-        Predicate userMatch = cb.equal(root.get("userId"), userId);
-
-        query.select(root).where(cb.and(realmMatch, tenantMatch, userMatch));
-
-        List<TenantInvitationEntity> invitations = em.createQuery(query).getResultList();
-        if (invitations.isEmpty()) {
-            log.debug("No invitation found for tenant ID: {} and user ID: {}", tenantId, userId);
-            return false;
-        }
-
-        for (TenantInvitationEntity entity : invitations) {
-            em.remove(entity);
-        }
-        em.flush();
-        return true;
-    }
-
-    @Override
     public boolean deleteTenant(RealmModel realm, String id) {
         getTenantById(realm, id).ifPresent(tenant -> {
             var entity = em.find(TenantEntity.class, id);

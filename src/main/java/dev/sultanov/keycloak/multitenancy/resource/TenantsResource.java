@@ -233,35 +233,6 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         return Response.noContent().build();
     }
 
-    @DELETE
-    @Path("{tenantId}/invitations/users/{userId}")
-    @Operation(operationId = "revokeInvitationByUserId", summary = "Revoke invitation for a specific user in a tenant")
-    @APIResponses({
-            @APIResponse(responseCode = "204", description = "No Content"),
-            @APIResponse(responseCode = "400", description = "Bad Request"),
-            @APIResponse(responseCode = "401", description = "Unauthorized"),
-            @APIResponse(responseCode = "403", description = "Forbidden"),
-            @APIResponse(responseCode = "404", description = "Tenant, User, or Invitation not found"),
-            @APIResponse(responseCode = "500", description = "Internal Server Error")
-    })
-    public Response revokeInvitationByUserId(
-            @Parameter(description = "Tenant ID") @PathParam("tenantId") String tenantId,
-            @Parameter(description = "User ID to revoke invitation") @PathParam("userId") String userId) {
-        log.debug("Attempting to revoke invitation for tenant ID: {} and user ID: {}", tenantId, userId);
-
-        // Revoke invitation
-        boolean revoked = tenantProvider.revokeInvitation(realm, tenantId, userId);
-        if (!revoked) {
-            log.error("Failed to revoke invitation for tenant ID: {} and user ID: {}", tenantId, userId);
-            throw new WebApplicationException(
-                    String.format("Failed to revoke invitation for tenant %s and user %s", tenantId, userId),
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        log.info("Successfully revoked invitation for tenant ID: {} and user ID: {}", tenantId, userId);
-        return Response.noContent().build();
-    }
-
     private boolean isNullOrWhitespace(String str) {
         return ObjectUtils.isEmpty(str) || str.trim().isEmpty();
     }

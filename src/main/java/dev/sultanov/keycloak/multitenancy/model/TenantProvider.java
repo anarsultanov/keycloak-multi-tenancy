@@ -29,8 +29,6 @@ public interface TenantProvider extends Provider {
 
     boolean revokeMembership(RealmModel realm, String tenantId, String userId);
 
-    boolean revokeInvitation(RealmModel realm, String tenantId, String userId);
-
 	List<UserMembershipRepresentation> listMembershipsByUserId(RealmModel realm, String userId);
 
 }
