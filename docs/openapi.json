@@ -121,6 +121,23 @@
           }
         },
         "required" : [ "name" ]
+      },
+      "UserMembershipRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
       }
     }
   },
@@ -213,10 +230,10 @@
     },
     "/tenants/users/{userId}" : {
       "get" : {
-        "summary" : "List tenants for a specific user ID",
-        "operationId" : "listTenantsByUserId",
+        "summary" : "List memberships for a specific user ID",
+        "operationId" : "listMembershipsByUserId",
         "parameters" : [ {
-          "description" : "User ID to fetch associated tenants",
+          "description" : "User ID to fetch associated memberships",
           "name" : "userId",
           "in" : "path",
           "required" : true,
@@ -232,7 +249,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/TenantRepresentation"
+                    "$ref" : "#/components/schemas/UserMembershipRepresentation"
                   }
                 }
               }
@@ -243,9 +260,6 @@
           },
           "401" : {
             "description" : "Unauthorized"
-          },
-          "403" : {
-            "description" : "Forbidden"
           },
           "404" : {
             "description" : "User not found"
