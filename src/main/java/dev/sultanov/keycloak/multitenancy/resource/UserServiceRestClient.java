@@ -46,7 +46,7 @@ public class UserServiceRestClient {
         }
 
         if (!ObjectUtils.isEmpty(rejected)) {
-            businessStatusList.add(new BusinessStatusEntry(BusinessStatus.REJECT.name(), rejected));
+            businessStatusList.add(new BusinessStatusEntry(BusinessStatus.INACTIVE.name(), rejected));
             log.debugf("Added Reject status for userId: %s with businessIds: %s", userId, rejected);
         }
 
