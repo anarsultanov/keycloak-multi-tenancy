@@ -1,0 +1,24 @@
+{
+  "attributes": [
+    {
+      "name": "tenantId",
+      "displayName": "Tenant Id",
+      "validations": {
+        "pattern": {
+          "error-message": "Must be a valid UUID",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "permissions": {
+        "view": [
+          "admin"
+        ],
+        "edit": [
+          "admin"
+        ]
+      },
+      "group": "user-metadata",
+      "multivalued": false
+    }
+  ]
+}

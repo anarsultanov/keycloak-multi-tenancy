@@ -1,15 +1,15 @@
 package dev.sultanov.keycloak.multitenancy.authentication.authenticators;
 
-import static java.util.function.Predicate.not;
-import static org.keycloak.services.resources.IdentityBrokerService.getIdentityProviderFactory;
+import static org.keycloak.services.resources.IdentityBrokerService.getIdentityProvider;
 
-import jakarta.ws.rs.core.MultivaluedMap;
+import lombok.extern.jbosslog.JBossLog;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -18,39 +18,35 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+@JBossLog
 public class LoginWithSsoAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        log.debug("LoginWithSsoAuthenticator.authenticate called");
         var challenge = context.form().createForm("login-with-sso.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        var formData = context.getHttpRequest().getDecodedFormParameters();
         var ssoId = formData.getFirst("sso-id");
-        var identityProviderModel = context.getSession().identityProviders().getAllStream()
-                .filter(idp -> idp.getAlias().equals(ssoId))
-                .filter(IdentityProviderModel::isEnabled)
-                .filter(not(IdentityProviderModel::isLinkOnly))
-                .findFirst();
-        if (identityProviderModel.isPresent()) {
-            performLogin(context, identityProviderModel.get());
-        } else {
+        var keycloakSession = context.getSession();
+
+        // Try to find the identity provider by its ID, if not found, return an error
+        IdentityProvider<?> identityProvider;
+        try {
+            identityProvider = getIdentityProvider(keycloakSession, ssoId);
+        } catch (IdentityBrokerException e) {
             var response = context.form()
                     .addError(new FormMessage("sso-id", "ssoError"))
                     .createForm("login-with-sso.ftl");
             context.challenge(response);
+            return;
         }
-    }
 
-    private void performLogin(AuthenticationFlowContext context, IdentityProviderModel idp) {
-        String providerAlias = idp.getAlias();
-
-        var keycloakSession = context.getSession();
-        var identityProvider = getIdentityProviderFactory(keycloakSession, idp).create(keycloakSession, idp);
-        var authenticationRequest = createAuthenticationRequest(context, providerAlias);
+        var authenticationRequest = createAuthenticationRequest(context, ssoId);
         var response = identityProvider.performLogin(authenticationRequest);
         context.forceChallenge(response);
     }
