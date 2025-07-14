@@ -1,15 +1,16 @@
 package dev.sultanov.keycloak.multitenancy.support.browser;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.AriaRole;
 
 public class SelectLoginMethodPage extends AbstractPage {
 
     SelectLoginMethodPage(Page page) {
         super(page);
-        assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Select login method")).isVisible()).isTrue();
+        Locator heading = page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Select login method"));
+        PlaywrightAssertions.assertThat(heading).isVisible();
     }
 
     public SingleSignOnPage selectSingleSignOn() {
