@@ -189,6 +189,9 @@
           },
           "403" : {
             "description" : "Forbidden"
+          },
+          "409" : {
+            "description" : "Conflict - Tenant with the same name already exists"
           }
         }
       }
@@ -549,7 +552,7 @@
   },
   "info" : {
     "title" : "Keycloak Multi-Tenancy",
-    "version" : "26.0.2"
+    "version" : "26.1.0"
   },
   "servers" : [ {
     "url" : "{{keycloakUrl}}/realms/{{realmName}}"
