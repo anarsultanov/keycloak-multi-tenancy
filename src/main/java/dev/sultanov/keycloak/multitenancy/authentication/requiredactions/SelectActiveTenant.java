@@ -1,30 +1,40 @@
 package dev.sultanov.keycloak.multitenancy.authentication.requiredactions;
 
-import static dev.sultanov.keycloak.multitenancy.util.Constants.IDENTITY_PROVIDER_SESSION_NOTE;
-
 import dev.sultanov.keycloak.multitenancy.authentication.IdentityProviderTenantsConfig;
 import dev.sultanov.keycloak.multitenancy.authentication.TenantsBean;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantProvider;
 import dev.sultanov.keycloak.multitenancy.util.Constants;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Optional;
 import lombok.extern.jbosslog.JBossLog;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.RequiredActionHelper;
+
+import java.util.List;
+import java.util.Optional;
+
+import static dev.sultanov.keycloak.multitenancy.util.Constants.IDENTITY_PROVIDER_SESSION_NOTE;
+
 
 @JBossLog
 public class SelectActiveTenant implements RequiredActionProvider, RequiredActionFactory {
 
     public static final String ID = "select-active-tenant";
+    private static final int DEFAULT_MAX_AUTH_AGE = 365 * 24 * 60; // 365 days in minutes
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -93,6 +103,49 @@ public class SelectActiveTenant implements RequiredActionProvider, RequiredActio
     @Override
     public String getDisplayText() {
         return "Select active tenant";
+    }
+
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+
+    @Override
+    @Deprecated(since = "26.3.0", forRemoval = true)
+    public int getMaxAuthAge() {
+        return getMaxAuthAge(null);
+    }
+
+    @Override
+    public int getMaxAuthAge(KeycloakSession session) {
+        if (session == null) {
+            return DEFAULT_MAX_AUTH_AGE;
+        }
+
+        KeycloakContext keycloakContext = session.getContext();
+        RealmModel realm = keycloakContext.getRealm();
+        int maxAge;
+
+        // try required action config
+        AuthenticationSessionModel authSession = keycloakContext.getAuthenticationSession();
+        if (authSession != null) {
+
+            // we need to figure out the alias for the current required action
+            String providerId = authSession.getClientNote(org.keycloak.models.Constants.KC_ACTION);
+            RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, providerId);
+
+            if (requiredAction != null) {
+                RequiredActionConfigModel configModel = realm.getRequiredActionConfigByAlias(requiredAction.getAlias());
+                if (configModel != null && configModel.containsConfigKey(org.keycloak.models.Constants.MAX_AUTH_AGE_KEY)) {
+                    maxAge = RequiredActionFactory.parseMaxAuthAge(configModel);
+                    if (maxAge >= 0) {
+                        return maxAge;
+                    }
+                }
+            }
+        }
+
+        return DEFAULT_MAX_AUTH_AGE;
     }
 
     @Override
