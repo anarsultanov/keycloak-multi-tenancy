@@ -17,8 +17,8 @@
     </licenses>
 
     <properties>
-        <keycloak.version>26.0.7</keycloak.version>
-        <keycloak.client.version>26.0.3</keycloak.client.version>
+        <keycloak.version>26.3.1</keycloak.version>
+        <keycloak.client.version>26.0.6</keycloak.client.version>
     </properties>
 
     <dependencies>
@@ -181,7 +181,7 @@
                     <outputDirectory>${project.basedir}/docs</outputDirectory>
                     <infoTitle>${project.name}</infoTitle>
                     <infoVersion>${project.version}</infoVersion>
-                    <servers>{{keycloakUrl}}/auth/realms/{{realmName}}</servers>
+                    <servers>{{keycloakUrl}}/realms/{{realmName}}</servers>
                     <scanResourceClasses>
                         <dev.sultanov.keycloak.multitenancy.resource.TenantsResource>/tenants</dev.sultanov.keycloak.multitenancy.resource.TenantsResource>
                     </scanResourceClasses>
@@ -191,6 +191,21 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>2.18.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.36</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -11,6 +11,7 @@ Keycloak extension for creating multi-tenant IAM for B2B SaaS applications.
 - [Installation](#installation)
 - [Configuration](#configuration)
     - [Tenant Creation and Management](#tenant-creation-and-management)
+    - [Tenant Switching for Logged-in Users](#tenant-switching-for-logged-in-users)
     - [Token claims](#token-claims)
     - [IDP and SSO Integration](#idp-and-sso-integration)
 - [API](#api)
@@ -26,6 +27,7 @@ This project is licensed under the [Apache License, Version 2.0](http://www.apac
 - Invitations for users to join the tenant (API)
 - Review of pending invitations (Required action)
 - Selection of active tenant on login (Required action)
+- On-demand tenant switching for logged-in users, initiated by the client application
 
 ### IDP Integration
 
@@ -64,9 +66,18 @@ Now go to `Realm Settings` > `Login` and turn on `Verify email` as only users wi
 <br/>Depending on your onboarding model, you may also want to enable `User registration`.
 
 Each new user will be prompted to review pending invitations, if any, and/or create a new tenant if there is no invitation, or they do not accept any of them.
-If they accept the invitation, they can still create another tenant later using the [API](#api).
-Note that tenant creation through the API can be restricted to users with a specified client role by setting the `requiredRoleForTenantCreation` realm attribute.
-Users who is a member of more than one tenant will be prompted to select an active tenant when they log in.
+
+### Tenant Switching for Logged-in Users
+
+This extension allows client applications to initiate a tenant switch for an already authenticated user, enabling them to change their active tenant context without a full re-login. This is achieved using Keycloak's **Application-Initiated Actions (AIA)**.
+
+The flow is as follows:
+1.  The user triggers a tenant switch from within your application.
+2.  The application initiates the `select-active-tenant` action by redirecting the user to a specially crafted Keycloak URL. For details on how to construct this URL, see the [Keycloak AIA documentation](https://www.keycloak.org/docs/latest/server_admin/index.html#con-aia_server_administration_guide).
+3.  The user is presented with the tenant selection page. In this flow, a "Cancel" button is visible, allowing them to abort the switch.
+4.  If the user selects a new tenant, they are redirected back to the application with a new authorization code. Your application must then exchange this code for new tokens containing the updated `active_tenant` claim.
+5.  If the user cancels, they are redirected back with a `kc_action_status=cancelled` query parameter, and the original tokens remain valid.
+
 
 ### Tenant Management Role
 
