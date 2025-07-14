@@ -20,6 +20,7 @@ import org.hibernate.annotations.FetchMode;
 @Entity
 @Table(name = "TENANT", uniqueConstraints = {@UniqueConstraint(columnNames = {"NAME", "REALM_ID"})})
 @NamedQuery(name = "getTenantsByRealmId", query = "SELECT t FROM TenantEntity t WHERE t.realmId = :realmId")
+@NamedQuery(name = "getTenantByNameAndRealmId", query = "SELECT t FROM TenantEntity t WHERE t.name = :name AND t.realmId = :realmId")
 @NamedQuery(name="getTenantsByAttributeNameAndValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.value = :value")
 @NamedQuery(name="getTenantsByAttributeNameAndLongValue", query="select u from TenantEntity u join u.attributes attr where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
 public class TenantEntity {

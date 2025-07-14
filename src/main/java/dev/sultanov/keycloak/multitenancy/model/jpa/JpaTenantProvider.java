@@ -68,6 +68,16 @@ public class JpaTenantProvider implements TenantProvider {
             return Optional.empty();
         }
     }
+    
+    @Override
+    public Optional<TenantModel> getTenantByName(RealmModel realm, String name) {
+        TypedQuery<TenantEntity> query = em.createNamedQuery("getTenantByNameAndRealmId", TenantEntity.class);
+        query.setParameter("name", name);
+        query.setParameter("realmId", realm.getId());
+        return query.getResultStream()
+                .findFirst()
+                .map(entity -> new TenantAdapter(session, realm, em, entity));
+    }
 
     @Override
     public Stream<TenantModel> getTenantsStream(RealmModel realm) {

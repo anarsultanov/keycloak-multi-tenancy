@@ -12,6 +12,8 @@ public interface TenantProvider extends Provider {
     TenantModel createTenant(RealmModel realm, String name, UserModel creator);
 
     Optional<TenantModel> getTenantById(RealmModel realm, String id);
+    
+    Optional<TenantModel> getTenantByName(RealmModel realm, String name);
 
     Stream<TenantModel> getTenantsStream(RealmModel realm);
 

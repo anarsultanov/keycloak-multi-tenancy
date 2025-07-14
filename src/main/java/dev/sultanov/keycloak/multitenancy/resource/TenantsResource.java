@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.utils.SearchQueryUtils;
 
 public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
@@ -45,7 +46,8 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
     @APIResponses({
             @APIResponse(responseCode = "201", description = "Created"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
-            @APIResponse(responseCode = "403", description = "Forbidden")
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "409", description = "Conflict - Tenant with the same name already exists")
     })
     public Response createTenant(@RequestBody(required = true) TenantRepresentation request) {
 
@@ -55,6 +57,11 @@ public class TenantsResource extends AbstractAdminResource<TenantAdminAuth> {
         }
 
         validateAttributes(request.getAttributes());
+        
+        // Check if tenant with this name already exists
+        if (tenantProvider.getTenantByName(realm, request.getName()).isPresent()) {
+            throw ErrorResponse.exists(String.format("Tenant with name '%s' already exists in this realm", request.getName()));
+        }
 
         TenantModel model = tenantProvider.createTenant(realm, request.getName(), auth.getUser());
 

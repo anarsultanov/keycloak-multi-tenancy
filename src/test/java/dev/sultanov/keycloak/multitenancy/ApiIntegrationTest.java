@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -221,6 +222,31 @@ public class ApiIntegrationTest extends BaseIntegrationTest {
 
         // and user1 should see the updated tenant name
         assertThat(tenantResource.toRepresentation().getName()).isEqualTo(newName);
+    }
+
+    @Test
+    void userCreatesTenant_shouldReturnConflict_whenTenantNameAlreadyExists() {
+        // given
+        var existingTenantName = tenant.getName();
+        
+        var anotherUser = keycloakAdminClient.createVerifiedUser();
+        anotherUser.createTenant(); // complete "create-tenant" required action
+
+        // when
+        var request = new TenantRepresentation();
+        request.setName(existingTenantName);
+        try (var response = anotherUser.tenantsResource().createTenant(request)) {
+
+            // then
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_CONFLICT);
+            
+            // and the error message should be specific about duplicate tenant name
+            var error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage())
+                    .contains("Tenant with name")
+                    .contains(existingTenantName)
+                    .contains("already exists in this realm");
+        }
     }
 
     private static void assignTenantsManagementRole(KeycloakUser user) {
