@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.Map;
 import java.util.List;
+
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -78,6 +80,14 @@ public interface TenantModel {
     boolean revokeInvitation(String id);
 
     void revokeInvitations(String email);
+
+    Stream<TenantGroupOwnershipModel> getGroupOwnershipsStream(Integer firstResult, Integer maxResults);
+
+    Stream<TenantGroupOwnershipModel> getGroupOwnershipsStream(String email, Integer firstResult, Integer maxResults);
+
+    Optional<TenantGroupOwnershipModel> getGroupOwnershipById(String groupOwnershipId);
+
+    boolean revokeGroupOwnership(String groupOwnershipId);
 
     interface TenantEvent extends ProviderEvent {
 
