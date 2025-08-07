@@ -17,7 +17,7 @@
     </licenses>
 
     <properties>
-        <keycloak.version>26.3.1</keycloak.version>
+        <keycloak.version>26.3.2</keycloak.version>
         <keycloak.client.version>26.0.6</keycloak.client.version>
     </properties>
 
@@ -69,19 +69,19 @@
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.53.0</version>
+            <version>1.54.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.13.3</version>
+            <version>5.13.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.27.3</version>
+            <version>3.27.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
