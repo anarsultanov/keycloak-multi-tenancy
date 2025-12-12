@@ -3,7 +3,6 @@ package dev.sultanov.keycloak.multitenancy.resource.representation;
 import lombok.Data;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 
 @Schema
@@ -20,5 +19,5 @@ public class TenantRepresentation {
     private String realm;
 
     @Schema(description = "Attributes of the tenant")
-    private Map<String, List<String>> attributes = new HashMap<>();
+    private Map<String, List<String>> attributes;
 }
