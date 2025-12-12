@@ -59,7 +59,7 @@ jobs:
           retention-days: 1
 
       - name: Commit New Version
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: Set version to ${{ steps.version.outputs.version }}"
           file_pattern: 'pom.xml docs/openapi.json docs/openapi.yaml'
