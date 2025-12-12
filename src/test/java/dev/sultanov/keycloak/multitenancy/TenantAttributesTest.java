@@ -223,4 +223,32 @@ public class TenantAttributesTest extends BaseIntegrationTest {
         assertThat(createdTenant.getAttributes())
                 .containsEntry("test", List.of(longValue));
     }
+
+    @Test
+    void shouldPreserveAttributesWhenUpdatingWithoutAttributesField() {
+        // given
+        var user = keycloakAdminClient.createVerifiedUser();
+        var tenantResource = user.createTenant();
+
+        var addAttributesRequest = new TenantRepresentation();
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put("department", List.of("Engineering"));
+        attributes.put("location", List.of("San Francisco"));
+        addAttributesRequest.setAttributes(attributes);
+        tenantResource.updateTenant(addAttributesRequest);
+
+        // when
+        var updateRequest = new TenantRepresentation();
+        updateRequest.setName("Updated-" + UUID.randomUUID());
+
+        try (var response = tenantResource.updateTenant(updateRequest)) {
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_NO_CONTENT);
+        }
+
+        // then
+        var updatedTenant = tenantResource.toRepresentation();
+        assertThat(updatedTenant.getAttributes())
+                .containsEntry("department", List.of("Engineering"))
+                .containsEntry("location", List.of("San Francisco"));
+    }
 }
