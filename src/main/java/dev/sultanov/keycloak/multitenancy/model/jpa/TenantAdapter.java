@@ -1,12 +1,10 @@
 package dev.sultanov.keycloak.multitenancy.model.jpa;
 
+import dev.sultanov.keycloak.multitenancy.model.TenantGroupOwnershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantInvitationModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantMembershipModel;
 import dev.sultanov.keycloak.multitenancy.model.TenantModel;
-import dev.sultanov.keycloak.multitenancy.model.entity.TenantEntity;
-import dev.sultanov.keycloak.multitenancy.model.entity.TenantInvitationEntity;
-import dev.sultanov.keycloak.multitenancy.model.entity.TenantMembershipEntity;
-import dev.sultanov.keycloak.multitenancy.model.entity.TenantAttributeEntity;
+import dev.sultanov.keycloak.multitenancy.model.entity.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import java.util.HashSet;
@@ -247,6 +245,49 @@ public class TenantAdapter implements TenantModel, JpaModel<TenantEntity> {
     @Override
     public void revokeInvitations(String email) {
         tenant.getInvitations().removeIf(inv -> inv.getEmail().equals(email.toLowerCase()));
+    }
+
+    @Override
+    public Stream<TenantGroupOwnershipModel> getGroupOwnershipsStream(Integer first, Integer max) {
+        TypedQuery<TenantGroupOwnershipEntity> query = em.createNamedQuery("getGroupOwnershipsByTenantId", TenantGroupOwnershipEntity.class);
+        query.setParameter("tenantId", tenant.getId());
+        return PaginationUtils.paginateQuery(query, first, max).getResultStream()
+                .map((groupOwnership) -> new TenantGroupOwnershipAdapter(session, realm, groupOwnership));
+    }
+
+    @Override
+    public Stream<TenantGroupOwnershipModel> getGroupOwnershipsStream(String name, Integer first, Integer max) {
+        TypedQuery<TenantGroupOwnershipEntity> query = em.createNamedQuery("getGroupOwnershipsByTenantIdAndGroupName", TenantGroupOwnershipEntity.class);
+        query.setParameter("tenantId", tenant.getId());
+        query.setParameter("name", name);
+        return PaginationUtils.paginateQuery(query, first, max).getResultStream()
+                .map((groupOwnership) -> new TenantGroupOwnershipAdapter(session, realm, groupOwnership));
+    }
+
+    @Override
+    public Optional<TenantGroupOwnershipModel> getGroupOwnershipById(String groupOwnershipId) {
+        TenantGroupOwnershipEntity membership = em.find(TenantGroupOwnershipEntity.class, groupOwnershipId);
+        if (membership != null && realm.getId().equals(membership.getTenant().getRealmId())) {
+            return Optional.of(new TenantGroupOwnershipAdapter(session, realm, membership));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public boolean revokeGroupOwnership(String groupOwnershipId) {
+        var groupOwnershipEntity = em.find(TenantGroupOwnershipEntity.class, groupOwnershipId);
+        if (groupOwnershipEntity != null) {
+            var id = groupOwnershipEntity.getGroup().getId();
+
+            if (id != null) {
+                revokeGroupOwnership(id);
+            }
+            em.remove(groupOwnershipEntity);
+            em.flush();
+            return true;
+        }
+        return false;
     }
 
     @Override

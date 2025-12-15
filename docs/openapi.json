@@ -2,6 +2,35 @@
   "openapi" : "3.1.0",
   "components" : {
     "schemas" : {
+      "TenantGroupOwnershipRepresentation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "group" : {
+            "type" : "object",
+            "readOnly" : true,
+            "properties" : {
+              "id" : {
+                "type" : "string"
+              },
+              "name" : {
+                "type" : "string"
+              }
+            }
+          },
+          "roles" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "roles" ]
+      },
       "TenantInvitationRepresentation" : {
         "type" : "object",
         "properties" : {
@@ -298,6 +327,101 @@
         }
       }
     },
+    "/tenants/{tenantId}/group-ownerships" : {
+      "parameters" : [ {
+        "name" : "tenantId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ],
+      "get" : {
+        "summary" : "List group ownerships",
+        "operationId" : "listGroupOwnership",
+        "parameters" : [ {
+          "description" : "Pagination offset",
+          "name" : "first",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "Maximum results size (defaults to 100)",
+          "name" : "max",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "Member email",
+          "name" : "search",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TenantGroupOwnershipRepresentation"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/group-ownerships/{groupOwnershipId}" : {
+      "parameters" : [ {
+        "name" : "tenantId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ],
+      "delete" : {
+        "summary" : "Revoke tenant group ownership",
+        "operationId" : "revokeGroupOwnership",
+        "parameters" : [ {
+          "name" : "groupOwnershipId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "description" : "Not Found"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/invitations" : {
       "parameters" : [ {
         "name" : "tenantId",
@@ -555,6 +679,6 @@
     "version" : "26.1.1"
   },
   "servers" : [ {
-    "url" : "{{keycloakUrl}}/realms/{{realmName}}"
+    "url" : "{{keycloakUrl}}/auth/realms/{{realmName}}"
   } ]
 }
