@@ -1,5 +1,7 @@
 package dev.sultanov.keycloak.multitenancy.resource;
 
+import static dev.sultanov.keycloak.multitenancy.util.Constants.TENANT_ADMIN_ROLE;
+import static dev.sultanov.keycloak.multitenancy.util.Constants.TENANT_USER_ROLE;
 import static org.keycloak.locale.LocaleSelectorProvider.USER_REQUEST_LOCALE;
 
 import dev.sultanov.keycloak.multitenancy.email.EmailRecipient;
@@ -24,7 +26,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -54,8 +58,10 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
     @Operation(operationId = "createInvitation", summary = "Create invitation")
     @APIResponses({
             @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "400", description = "Bad Request — invalid email or attempt to assign admin role"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
-            @APIResponse(responseCode = "403", description = "Forbidden")
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "409", description = "Conflict — invitation or membership already exists")
     })
     public Response createInvitation(@RequestBody(required = true) TenantInvitationRepresentation request) {
         String email = request.getEmail();
@@ -73,8 +79,13 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
             throw new ClientErrorException(String.format("%s is already a member of this organization.", email), Response.Status.CONFLICT);
         }
 
+        // Admin assignment is not allowed via invitation — only the tenant
+        // creator gets tenant-admin (see JpaTenantProvider#createTenant). All
+        // invited members default to tenant-user plus any service-level roles.
+        Set<String> normalizedRoles = normalizeAssignableRoles(request.getRoles());
+
         try {
-            TenantInvitationModel invitation = tenant.addInvitation(email, auth.getUser(), request.getRoles());
+            TenantInvitationModel invitation = tenant.addInvitation(email, auth.getUser(), normalizedRoles);
             TenantInvitationRepresentation representation = ModelMapper.toRepresentation(invitation);
 
             session.setAttribute(USER_REQUEST_LOCALE, request.getLocale());
@@ -136,6 +147,15 @@ public class TenantInvitationsResource extends AbstractAdminResource<TenantAdmin
         } else {
             throw new NotFoundException(String.format("No invitation with id %s", invitationId));
         }
+    }
+
+    private static Set<String> normalizeAssignableRoles(Set<String> requested) {
+        Set<String> roles = requested == null ? new HashSet<>() : new HashSet<>(requested);
+        if (roles.contains(TENANT_ADMIN_ROLE)) {
+            throw new BadRequestException("Role '" + TENANT_ADMIN_ROLE + "' cannot be assigned via invitation");
+        }
+        roles.add(TENANT_USER_ROLE);
+        return roles;
     }
 
     private static boolean isValidEmail(String email) {
