@@ -37,17 +37,25 @@ public class ReviewTenantInvitations implements RequiredActionProvider, Required
         var realm = context.getRealm();
         var user = context.getUser();
         var provider = context.getSession().getProvider(TenantProvider.class);
-        if (user.getEmail() != null && user.isEmailVerified()) {
+
+        // Without a verified email we cannot match invitations reliably. Skip
+        // the challenge instead of falling through silently — leaving the
+        // required action unresolved stalls the flow and breaks downstream
+        // actions like select-active-tenant.
+        if (user.getEmail() == null || !user.isEmailVerified()) {
             log.debug("User email is missing or not verified, skipping challenge");
-            var invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
-            if (invitations.isEmpty()) {
-                log.debug("No invitations found, challenge not required");
-                context.success();
-            } else {
-                log.debug("Invitations found, initializing challenge");
-                var challenge = context.form().setAttribute("data", TenantsBean.fromInvitations(invitations)).createForm("review-invitations.ftl");
-                context.challenge(challenge);
-            }
+            context.success();
+            return;
+        }
+
+        var invitations = provider.getTenantInvitationsStream(realm, user).collect(Collectors.toList());
+        if (invitations.isEmpty()) {
+            log.debug("No invitations found, challenge not required");
+            context.success();
+        } else {
+            log.debug("Invitations found, initializing challenge");
+            var challenge = context.form().setAttribute("data", TenantsBean.fromInvitations(invitations)).createForm("review-invitations.ftl");
+            context.challenge(challenge);
         }
     }
 
